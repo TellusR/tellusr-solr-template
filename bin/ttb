@@ -1,0 +1,94 @@
+#!/bin/bash
+
+SCRIPT_NAME=`basename "${BASH_SOURCE[0]}"`
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+SOLR_CONTAINER=tellusr_solr
+VERSION=${SOLR_VERSION_TAG:-"latest"}
+
+CLI_DIR=$(readlink -f "../tellusr-cli/build/install/tellusr-cli")
+if [[ -d $CLI_DIR ]];
+then
+    TELLUSR_CLI_DIR="$CLI_DIR"
+fi
+
+if [[ "$OSTYPE" == "darwin"* ]]
+then
+    LOCALHOST="host.docker.internal"
+    TELLUSR_RUN_OPTIONS="--rm"
+else
+    LOCALHOST="localhost"
+    TELLUSR_RUN_OPTIONS="--network=host --rm"
+fi
+
+DOCKER=$(docker ps &> /dev/null && echo "docker" || echo "sudo docker")
+
+PROJECT=default
+SOLR_PORT=${SOLR_PORT:-"8985"}
+SOLR_DEMO_VOLUME=${SOLR_DEMO_VOLUME:-"tellusr_solr_${PROJECT}_data"}
+
+function run {
+    $DOCKER volume rm tellusr_solr_test_data 2> /dev/null || echo -n
+    $DOCKER run \
+            -d ${TELLUSR_RUN_OPTIONS} \
+            -p $SOLR_PORT \
+            -e SOLR_HEAP=${SOLR_HEAP:-"3096m"} \
+            -e TELLUSR_BACKEND_URL=${BACKEND_URL:-"http://$LOCALHOST:${BACKEND_PORT:-"8989"}"} \
+            -e SOLR_DISABLE_SECURITY_JSON="true" \
+            -e SOLR_PORT=$SOLR_PORT \
+            -v $SOLR_DEMO_VOLUME:/var/solr \
+            -v $SCRIPT_DIR/configset:/setup/configset \
+            --log-driver none \
+            --name ${SOLR_CONTAINER} \
+            tellusr/demo:${VERSION}
+    sleep 1
+}
+
+function demo_migrate {
+    $DOCKER exec -t ${SOLR_CONTAINER} demo_create_core.sh
+    $DOCKER exec -t ${SOLR_CONTAINER} demo_test.sh
+}
+
+function console {
+    $DOCKER exec -it ${SOLR_CONTAINER} bash
+}
+
+
+function stop {
+    $DOCKER stop ${SOLR_CONTAINER}
+}
+
+
+function help {
+    echo "run|stop|console|demo|help"
+}
+
+
+for arg in "$@"
+do
+    case "$arg" in
+	run)
+	    run
+	    ;;
+
+	stop)
+	    stop
+	    ;;
+
+	console)
+	    console
+	    ;;
+
+	demo)
+	    run
+            demo_migrate
+            console
+            stop
+	    ;;
+        help)
+            help
+            ;;
+        *)
+            help
+            ;;
+    esac
+done
