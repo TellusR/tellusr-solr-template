@@ -1306,7 +1306,7 @@
     <lst name="suggester">
       <str name="field">INSERT_SUGGESTER_FIELD</str>
       <str name="weightField">INSERT_SUGGESTER_WEIGHT_FIELD</str>
-      <!-- str name="payloadField">INSERT_SUGGESTER_PAYLOAD_FIELD</str -->
+      <str name="payloadField">INSERT_SUGGESTER_PAYLOAD_FIELD</str>
     </lst>
     <str name="returnQueryResponse">no</str>
   </searchComponent>
