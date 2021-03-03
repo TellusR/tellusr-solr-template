@@ -21,13 +21,15 @@ elif [ -f "../../../tellusr.env" ]; then
 fi
 SOLR_CONFIG_DIR=$PROJECT_DIR/configset
 SOLR_HOST="localhost"
-SOLR_PORT="8984"
 SOLR_DATA_VOLUME="tellusr_solr_${PROJECT}_data"
 BUILD_ROOT=$PROJECT_DIR
 
 
 ## Load local overrides for config variables
 source "$PROJECT_DIR/tellusr.env"
+
+SOLR_PORT=${SOLR_PORT:-"8983"}
+
 
 ## Docker on MacOS does not support --network=host, compensate
 if [[ "$OSTYPE" == "darwin"* ]]
@@ -43,23 +45,28 @@ fi
 DOCKER=$(docker ps &> /dev/null && echo "docker" || echo "sudo docker")
 
 function run {
+    let ZOOKEEPER_PORT=SOLR_PORT+1000
     $DOCKER volume rm tellusr_solr_test_data 2> /dev/null || echo -n
+    set -x
     $DOCKER run \
             -d ${TELLUSR_RUN_OPTIONS} \
-            -p $SOLR_PORT \
+            -p ${SOLR_PORT} \
+            -p ${ZOOKEEPER_PORT} \
+            -e ZOOKEEPER_ID=${ZOOKEEPER_ID:-"1"} \
             -e SOLR_HEAP=${SOLR_HEAP:-"3096m"} \
             -e TELLUSR_BACKEND_URL=${BACKEND_URL:-"http://$LOCALHOST:${BACKEND_PORT:-"8989"}"} \
             -e SOLR_DISABLE_SECURITY_JSON="true" \
             -e SOLR_PORT=$SOLR_PORT \
-            -v $SOLR_DATA_VOLUME:/var/solr \
+            -v ${SOLR_DATA_VOLUME}_${SOLR_PORT}:/var/solr \
             -v $BUILD_ROOT/configset:/setup/configset \
             --log-driver none \
-            --name ${SOLR_CONTAINER} \
-            tellusr/demo:${TELLUSR_VERSION}
+            --name ${SOLR_CONTAINER}_${SOLR_PORT} \
+            tellusr/demo:${TELLUSR_VERSION} -DzkRun
+    set +x
     sleep 1
 }
 
-function _migrate_data() {
+function _migrate_data {
     ## Check if migrate_data function is defined in tellusr.env, and if so run it
     if [ _migrate_data_defined ]
     then
@@ -69,28 +76,29 @@ function _migrate_data() {
 
 function volume_drop {
     echo -n "Dropping volume: "
-    $DOCKER volume rm $SOLR_DATA_VOLUME
+    $DOCKER volume rm ${SOLR_DATA_VOLUME}_${SOLR_PORT}
     _migrate_data $SOLR_HOST $SOLR_PORT
 }
 
 function migrate {
     echo -n "Attached to: "
-    $DOCKER exec -t ${SOLR_CONTAINER} create_cores.sh
-    _migrate_data $SOLR_HOST $SOLR_PORT
+    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} create_collections.sh
+    _migrate_data $SOLR_HOST $PORT
 }
 
 function demo_migrate {
-    $DOCKER exec -t ${SOLR_CONTAINER} demo_create_core.sh
-    $DOCKER exec -t ${SOLR_CONTAINER} demo_test.sh
+    echo -n "Attached to: "
+    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} demo_migrate_schema.sh
+    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} demo_migrate.sh
 }
 
 function console {
-    $DOCKER exec -it ${SOLR_CONTAINER} bash
+    $DOCKER exec -it ${SOLR_CONTAINER}_${SOLR_PORT} bash
 }
 
 
 function stop {
-    $DOCKER stop ${SOLR_CONTAINER}
+    $DOCKER stop ${SOLR_CONTAINER}_${SOLR_PORT}
 }
 
 
@@ -118,8 +126,14 @@ do
 	    console
 	    ;;
 
+	volume_drop)
+	    volume_drop
+	    ;;
+
 	demo)
+            volume_drop
 	    run
+            migrate
             demo_migrate
             console
             stop
@@ -131,6 +145,22 @@ do
             migrate
             console
             stop
+	    ;;
+
+	test_cloud)
+            let SOLR_PORT2=SOLR_PORT+1
+            ENV="env SOLR_PORT=$SOLR_PORT2 ZOOKEEPER_ID=2"
+            CMD=${BASH_SOURCE[0]}
+            $ENV $CMD volume_drop
+            $ENV $CMD run
+            $ENV $CMD migrate
+            volume_drop
+	    run
+            migrate
+            demo_migrate
+            console
+            stop
+            $ENV $CMD stop
 	    ;;
 
         help)
