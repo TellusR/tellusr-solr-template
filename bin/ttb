@@ -105,6 +105,11 @@ function help {
 }
 
 
+function die {
+    echo $1
+    exit 1
+}
+
 # Default command
 if [ "$#" == "0" ]; then
     set -- test
@@ -113,7 +118,7 @@ fi
 # Multiple commands
 while (( "$#" ))
 do
-    ARG="$1" && shift || exit 1
+    ARG="$1" && shift || die "Missing argument"
     case $ARG in
 	run)
 	    run
