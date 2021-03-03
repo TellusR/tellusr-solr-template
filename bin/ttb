@@ -59,7 +59,7 @@ function run {
             -v $BUILD_ROOT/configset:/setup/configset \
             --log-driver none \
             --name ${SOLR_CONTAINER}_${SOLR_PORT} \
-            tellusr/demo:${TELLUSR_VERSION} -DzkRun
+            tellusr/demo:${TELLUSR_VERSION} -DzkRun $TELLUSR_RUN_PARAMS
     set +x
     sleep 1
 }
@@ -164,17 +164,25 @@ do
 
 	test_cloud)
             let SOLR_PORT2=SOLR_PORT+1
-            ENV="env SOLR_PORT=$SOLR_PORT2 ZOOKEEPER_ID=2"
+            let SOLR_PORT3=SOLR_PORT+2
+            ENV2="env SOLR_PORT=$SOLR_PORT2 ZOOKEEPER_ID=2"
+            ENV3="env SOLR_PORT=$SOLR_PORT3 ZOOKEEPER_ID=3"
+            TELLUSR_RUN_PARAMS="-DzkHost=127.0.0.0:9983,127.0.0.0:9984,127.0.0.0:9985"
             CMD=${BASH_SOURCE[0]}
-            $ENV $CMD volume_drop
-            $ENV $CMD run
-            $ENV $CMD migrate
+            $ENV3 $CMD volume_drop
+            $ENV3 $CMD run
+            $ENV2 $CMD volume_drop
+            $ENV2 $CMD run
             volume_drop
 	    run
-            migrate
+            sleep 10
+            $ENV3 $CMD migrate
+            #$ENV2 $CMD migrate
+            #migrate
             console
             stop
-            $ENV $CMD stop
+            $ENV2 $CMD stop
+            $ENV3 $CMD stop
 	    ;;
 
         help)
