@@ -1,29 +1,16 @@
 # README #
 
-This README would normally document whatever steps are necessary to get your application up and running.
-
 ### What is this repository for? ###
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+A starting template for new solr projects that wants to use tellusr.
 
 ### How do I get set up? ###
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+Change the folder name of `configset/default` to the core name you wish.
+You may copy the folder recursively to new names if you need more cores.
 
-### Contribution guidelines ###
+Run `bin/ttb` to start solr on with your config. Use CTRL+D to exit. The
+setup is rebuilt every time to restart.
 
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+You can add code for migrating test data in `tellusr.env`. Here you can also
+override configuration variables.
