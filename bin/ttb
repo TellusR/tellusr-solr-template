@@ -1,7 +1,5 @@
 #!/bin/bash
 
-ARGS=${@:-"test"}
-
 SCRIPT_NAME=`basename "${BASH_SOURCE[0]}"`
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SOLR_CONTAINER=tellusr_solr
@@ -107,9 +105,16 @@ function help {
 }
 
 
-for arg in "$ARGS"
+# Default command
+if [ "$#" == "0" ]; then
+    set -- test
+fi
+
+# Multiple commands
+while (( "$#" ))
 do
-    case "$arg" in
+    ARG="$1" && shift || exit 1
+    case $ARG in
 	run)
 	    run
 	    ;;
