@@ -86,7 +86,6 @@ function migrate {
 
 function demo_migrate {
     echo -n "Attached to: "
-    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} demo_migrate_schema.sh
     $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} demo_migrate.sh
 }
 
@@ -101,7 +100,9 @@ function stop {
 
 
 function help {
-    echo "run|stop|console|demo|help"
+    CMD=${BASH_SOURCE[0]}
+    echo "$CMD volume_drop run migrate demo_migrate console stop"
+    echo "$CMD test|test_cloud|demo"
 }
 
 
@@ -130,6 +131,10 @@ do
 
 	migrate)
 	    migrate
+	    ;;
+
+	demo_migrate)
+	    demo_migrate
 	    ;;
 
 	console)
@@ -167,7 +172,6 @@ do
             volume_drop
 	    run
             migrate
-            demo_migrate
             console
             stop
             $ENV $CMD stop
@@ -177,7 +181,9 @@ do
             help
             ;;
         *)
+            echo "Unrecoginzed command $ARG"
             help
+            exit 1
             ;;
     esac
 done
