@@ -20,7 +20,6 @@ elif [ -f "../../../tellusr.env" ]; then
 fi
 SOLR_CONFIG_DIR=$PROJECT_DIR/configset
 SOLR_HOST="localhost"
-SOLR_DATA_VOLUME="tellusr_solr_${PROJECT}_data"
 BUILD_ROOT=$PROJECT_DIR
 
 
@@ -28,6 +27,7 @@ BUILD_ROOT=$PROJECT_DIR
 source "$PROJECT_DIR/tellusr.env"
 
 SOLR_PORT=${SOLR_PORT:-"8983"}
+SOLR_DATA_VOLUME="tellusr_solr_${PROJECT}_data"
 
 
 ## Docker on MacOS does not support --network=host, compensate
@@ -196,6 +196,7 @@ do
 	    ;;
 
 	test_cloud)
+            echo "Project: $PROJECT"
             mkdir -p configset
             echo_zoo_cfg > $PROJECT_DIR/configset/zoo.cfg
             export TELLUSR_RUN_PARAMS=""
