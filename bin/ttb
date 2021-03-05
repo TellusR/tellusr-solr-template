@@ -142,6 +142,18 @@ while (( "$#" ))
 do
     ARG="$1" && shift || die "Missing argument"
     case $ARG in
+        init)
+            if [[ -e zoo.cfg ]]
+            then
+                cp zoo.cfg configset/
+                export ZOOKEEPER_ID="$1" && shift || die "Cloud mode needs a zookeeper id"
+                [[ $ZOOKEEPER_ID =~ ^[0-9]+ ]] || die "Zookeeper id '$ZOOKEEPER_ID' should be and integer"
+            fi
+            run
+            sleep 20
+            migrate
+            stop
+            ;;
 	run)
 	    run
 	    ;;
