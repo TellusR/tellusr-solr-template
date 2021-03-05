@@ -1,5 +1,6 @@
 #!/bin/bash
 
+DEFAULT_COMMAND="test"
 SCRIPT_NAME=`basename "${BASH_SOURCE[0]}"`
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SOLR_CONTAINER=tellusr_solr
@@ -51,8 +52,8 @@ function run {
             -p ${SOLR_PORT} \
             -p ${ZOOKEEPER_PORT} \
             -e ZOOKEEPER_ID=${ZOOKEEPER_ID:-"1"} \
-            -e SOLR_HEAP=${SOLR_HEAP:-"3096m"} \
-            -e TELLUSR_BACKEND_URL=${BACKEND_URL:-"http://$LOCALHOST:${BACKEND_PORT:-"8989"}"} \
+            -e SOLR_HEAP=${SOLR_HEAP:-"4096m"} \
+            -e TELLUSR_BACKEND_URL=${BACKEND_URL:-"http://${LOCALHOST}:${BACKEND_PORT:-"8989"}"} \
             -e SOLR_DISABLE_SECURITY_JSON="true" \
             -e SOLR_PORT=$SOLR_PORT \
             -v ${SOLR_DATA_VOLUME}_${SOLR_PORT}:/var/solr \
@@ -98,6 +99,26 @@ function stop {
     $DOCKER stop ${SOLR_CONTAINER}_${SOLR_PORT}
 }
 
+function echo_zoo_cfg {
+    cat <<EOSCRIPT
+# The number of milliseconds of each tick
+tickTime=2000
+# The number of ticks that the initial
+# synchronization phase can take
+initLimit=100
+# The number of ticks that can pass between
+# sending a request and getting an acknowledgement
+syncLimit=5
+dataDir=/var/solr/data/zoo_data
+# clientPort=2181
+
+# admin.enableServer=false
+server.1=localhost:2888:3888
+server.2=localhost:2889:3889
+server.3=localhost:2890:3890
+EOSCRIPT
+}
+
 
 function help {
     CMD=${BASH_SOURCE[0]}
@@ -113,7 +134,7 @@ function die {
 
 # Default command
 if [ "$#" == "0" ]; then
-    set -- test
+    set -- $DEFAULT_COMMAND
 fi
 
 # Multiple commands
@@ -163,26 +184,28 @@ do
 	    ;;
 
 	test_cloud)
+            mkdir -p configset
+            echo_zoo_cfg > $PROJECT_DIR/configset/zoo.cfg
+            export TELLUSR_RUN_PARAMS=""
             let SOLR_PORT2=SOLR_PORT+1
             let SOLR_PORT3=SOLR_PORT+2
             ENV2="env SOLR_PORT=$SOLR_PORT2 ZOOKEEPER_ID=2"
             ENV3="env SOLR_PORT=$SOLR_PORT3 ZOOKEEPER_ID=3"
-            TELLUSR_RUN_PARAMS="-DzkHost=127.0.0.0:9983,127.0.0.0:9984,127.0.0.0:9985"
             CMD=${BASH_SOURCE[0]}
             $ENV3 $CMD volume_drop
-            $ENV3 $CMD run
             $ENV2 $CMD volume_drop
-            $ENV2 $CMD run
             volume_drop
+            $ENV3 $CMD run
+            $ENV2 $CMD run
 	    run
-            sleep 10
-            $ENV3 $CMD migrate
-            #$ENV2 $CMD migrate
-            #migrate
+            sleep 20
+            migrate
+            demo_migrate
             console
             stop
             $ENV2 $CMD stop
             $ENV3 $CMD stop
+            rm $PROJECT_DIR/configset/zoo.cfg
 	    ;;
 
         help)
