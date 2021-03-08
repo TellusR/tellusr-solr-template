@@ -28,7 +28,7 @@ source "$PROJECT_DIR/tellusr.env"
 
 SOLR_PORT=${SOLR_PORT:-"8983"}
 SOLR_DATA_VOLUME="tellusr_solr_${PROJECT}_data"
-
+TELLUSR_RUN_PARAMS="-DzkRun"
 
 ## Docker on MacOS does not support --network=host, compensate
 if [[ "$OSTYPE" == "darwin"* ]]
@@ -66,7 +66,7 @@ function run {
             -v $BUILD_ROOT/configset:/setup/configset \
             --log-driver none \
             --name ${SOLR_CONTAINER}_${SOLR_PORT} \
-            tellusr/demo:${TELLUSR_VERSION} -DzkRun $TELLUSR_RUN_PARAMS
+            tellusr/demo:${TELLUSR_VERSION} $TELLUSR_RUN_PARAMS
     sleep 1
 }
 
@@ -147,6 +147,18 @@ function help {
     echo "$CMD test|test_cloud|demo"
 }
 
+function create {
+    NEW_CORE=$1
+    TELLUSR_RUN_PARAMS="" 
+    run
+    mkdir -p $BUILD_ROOT/configset/$NEW_CORE/
+    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} solr create_core -c test
+    $DOCKER cp ${SOLR_CONTAINER}_${SOLR_PORT}:/var/solr/data/test/conf $BUILD_ROOT/configset/$NEW_CORE/conf
+    stop
+    volume_drop
+}
+
+
 
 function die {
     echo $1
@@ -173,6 +185,10 @@ do
             run
             migrate
             stop
+            ;;
+        create)
+            NEW_CORE="$1" && shift || die "Create needs a new core name"
+            create $NEW_CORE
             ;;
 	run)
 	    run
@@ -224,7 +240,7 @@ do
             echo "Project: $PROJECT"
             mkdir -p configset
             echo_zoo_cfg > $PROJECT_DIR/configset/zoo.cfg
-            export TELLUSR_RUN_PARAMS=""
+            export TELLUSR_RUN_PARAMS="-DzkRun"
             let SOLR_PORT2=SOLR_PORT+1
             let SOLR_PORT3=SOLR_PORT+2
             ENV2="env SOLR_PORT=$SOLR_PORT2 ZOOKEEPER_ID=2"
