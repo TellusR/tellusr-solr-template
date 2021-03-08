@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEFAULT_COMMAND="test"
+DEFAULT_TTB_COMMAND=${DEFAULT_TTB_COMMAND:-"test"}
 SCRIPT_NAME=`basename "${BASH_SOURCE[0]}"`
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SOLR_CONTAINER=tellusr_solr
@@ -41,12 +41,18 @@ else
 fi
 
 ## Check if docker command needs to be run as sudo
-DOCKER=$(docker ps &> /dev/null && echo "docker" || echo "sudo docker")
+DOCKER=$(docker ps &> /dev/null && echo "trace docker" || echo "sudo docker")
+
+function trace {
+    set -x
+    $@
+    { set +x; } 2> /dev/null
+}
+
 
 function run {
     let ZOOKEEPER_PORT=SOLR_PORT+1000
     $DOCKER volume rm tellusr_solr_test_data 2> /dev/null || echo -n
-    set -x
     $DOCKER run \
             -d ${TELLUSR_RUN_OPTIONS} \
             -p ${SOLR_PORT} \
@@ -61,7 +67,6 @@ function run {
             --log-driver none \
             --name ${SOLR_CONTAINER}_${SOLR_PORT} \
             tellusr/demo:${TELLUSR_VERSION} -DzkRun $TELLUSR_RUN_PARAMS
-    set +x
     sleep 1
 }
 
@@ -80,12 +85,14 @@ function volume_drop {
 }
 
 function migrate {
+    wait_for_solr
     echo -n "Attached to: "
     $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} create_collections.sh
     _migrate_data $SOLR_HOST $PORT
 }
 
 function demo_migrate {
+    wait_for_solr
     echo -n "Attached to: "
     $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} demo_migrate.sh
 }
@@ -98,6 +105,17 @@ function console {
 function stop {
     $DOCKER stop ${SOLR_CONTAINER}_${SOLR_PORT}
 }
+
+function wait_for_solr {
+    $DOCKER exec -it ${SOLR_CONTAINER}_${SOLR_PORT} wait-for-solr.sh
+}
+
+
+function wait_for_zookeeper {
+    $DOCKER exec -it ${SOLR_CONTAINER}_${SOLR_PORT} wait-for-zookeeper.sh
+}
+
+
 
 function echo_zoo_cfg {
     cat <<EOSCRIPT
@@ -134,7 +152,7 @@ function die {
 
 # Default command
 if [ "$#" == "0" ]; then
-    set -- $DEFAULT_COMMAND
+    set -- $DEFAULT_TTB_COMMAND
 fi
 
 # Multiple commands
@@ -150,7 +168,6 @@ do
                 [[ $ZOOKEEPER_ID =~ ^[0-9]+ ]] || die "Zookeeper id '$ZOOKEEPER_ID' should be and integer"
             fi
             run
-            sleep 20
             migrate
             stop
             ;;
@@ -178,6 +195,12 @@ do
 	    volume_drop
 	    ;;
 
+	sleep)
+            SECONDS="$1" && shift || die "sleep needs a seconds"
+            [[ $SECONDS =~ ^[0-9\.]+ ]] || die "Seconds '$SECONDS' should be a number"
+	    sleep $SECONDS
+	    ;;
+
 	demo)
             volume_drop
 	    run
@@ -190,6 +213,7 @@ do
 	test)
             volume_drop
 	    run
+            wait_for_solr
             migrate
             console
             stop
@@ -211,7 +235,6 @@ do
             $ENV3 $CMD run
             $ENV2 $CMD run
 	    run
-            sleep 20
             migrate
             demo_migrate
             console
