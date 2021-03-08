@@ -34,10 +34,10 @@ SOLR_DATA_VOLUME="tellusr_solr_${PROJECT}_data"
 if [[ "$OSTYPE" == "darwin"* ]]
 then
     LOCALHOST="host.docker.internal"
-    TELLUSR_RUN_OPTIONS="--rm"
+    TELLUSR_RUN_OPTIONS="$TELLUSR_RUN_OPTIONS --rm"
 else
     LOCALHOST="localhost"
-    TELLUSR_RUN_OPTIONS="--network=host --rm"
+    TELLUSR_RUN_OPTIONS="$TELLUSR_RUN_OPTIONS --network=host --rm"
 fi
 
 ## Check if docker command needs to be run as sudo
