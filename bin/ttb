@@ -41,7 +41,7 @@ else
 fi
 
 ## Check if docker command needs to be run as sudo
-DOCKER=$(docker ps &> /dev/null && echo "trace docker" || echo "sudo docker")
+DOCKER=$(docker ps &> /dev/null && echo "docker" || echo "sudo docker")
 
 function trace {
     set -x
@@ -53,7 +53,7 @@ function trace {
 function run {
     let ZOOKEEPER_PORT=SOLR_PORT+1000
     $DOCKER volume rm tellusr_solr_test_data 2> /dev/null || echo -n
-    $DOCKER run \
+    trace $DOCKER run \
             -d ${TELLUSR_RUN_OPTIONS} \
             -p ${SOLR_PORT} \
             -p ${ZOOKEEPER_PORT} \
@@ -81,7 +81,6 @@ function _migrate_data {
 function volume_drop {
     echo -n "Dropping volume: "
     $DOCKER volume rm ${SOLR_DATA_VOLUME}_${SOLR_PORT}
-    _migrate_data $SOLR_HOST $SOLR_PORT
 }
 
 function migrate {
@@ -103,7 +102,11 @@ function console {
 
 
 function stop {
-    $DOCKER stop ${SOLR_CONTAINER}_${SOLR_PORT}
+    CONTAINER=${SOLR_CONTAINER}_${SOLR_PORT}
+    if [ "$($DOCKER ps -q -f name="${CONTAINER}")" ]; then
+        echo -n "Stopping: "
+        $DOCKER stop "${CONTAINER}"
+    fi
 }
 
 function wait_for_solr {
@@ -195,10 +198,8 @@ do
 	    volume_drop
 	    ;;
 
-	sleep)
-            SECONDS="$1" && shift || die "sleep needs a seconds"
-            [[ $SECONDS =~ ^[0-9\.]+ ]] || die "Seconds '$SECONDS' should be a number"
-	    sleep $SECONDS
+	wait_for_solr)
+            wait_for_solr
 	    ;;
 
 	demo)
@@ -229,18 +230,12 @@ do
             ENV2="env SOLR_PORT=$SOLR_PORT2 ZOOKEEPER_ID=2"
             ENV3="env SOLR_PORT=$SOLR_PORT3 ZOOKEEPER_ID=3"
             CMD=${BASH_SOURCE[0]}
-            $ENV3 $CMD volume_drop
-            $ENV2 $CMD volume_drop
-            volume_drop
-            $ENV3 $CMD run
-            $ENV2 $CMD run
-	    run
+            stop; $ENV2 $CMD stop; $ENV3 $CMD stop
+            volume_drop; $ENV2 $CMD volume_drop; $ENV3 $CMD volume_drop
+            run; $ENV2 $CMD run; $ENV3 $CMD run
             migrate
-            demo_migrate
             console
-            stop
-            $ENV2 $CMD stop
-            $ENV3 $CMD stop
+            stop; $ENV2 $CMD stop; $ENV3 $CMD stop
             rm $PROJECT_DIR/configset/zoo.cfg
 	    ;;
 
