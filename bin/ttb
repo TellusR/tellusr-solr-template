@@ -184,6 +184,11 @@ while (( "$#" ))
 do
     ARG="$1" && shift || die "Missing argument"
     case $ARG in
+        uninstall)
+            SOLR_DATA_VOLUME=${INSTALL_SOLR_DATA_VOLUME:-$SOLR_DATA_VOLUME}
+            volume_drop
+            ;;
+        
         install)
             if [[ -e zoo.cfg ]]
             then
