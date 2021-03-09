@@ -27,7 +27,7 @@ BUILD_ROOT=$PROJECT_DIR
 source "$PROJECT_DIR/tellusr.env"
 
 SOLR_PORT=${SOLR_PORT:-"8983"}
-SOLR_DATA_VOLUME="tellusr_solr_${PROJECT}_data"
+SOLR_DATA_VOLUME="tellusr_solr_${PROJECT}_data_${SOLR_PORT}"
 TELLUSR_RUN_PARAMS="-DzkRun"
 
 ## Docker on MacOS does not support --network=host, compensate
@@ -62,7 +62,7 @@ function run {
             -e TELLUSR_BACKEND_URL=${BACKEND_URL:-"http://${LOCALHOST}:${BACKEND_PORT:-"8989"}"} \
             -e SOLR_DISABLE_SECURITY_JSON="true" \
             -e SOLR_PORT=$SOLR_PORT \
-            -v ${SOLR_DATA_VOLUME}_${SOLR_PORT}:/var/solr \
+            -v ${SOLR_DATA_VOLUME}:/var/solr \
             -v $BUILD_ROOT/configset:/setup/configset \
             --log-driver none \
             --name ${SOLR_CONTAINER}_${SOLR_PORT} \
@@ -80,7 +80,7 @@ function _migrate_data {
 
 function volume_drop {
     echo -n "Dropping volume: "
-    $DOCKER volume rm ${SOLR_DATA_VOLUME}_${SOLR_PORT}
+    $DOCKER volume rm ${SOLR_DATA_VOLUME}
 }
 
 function migrate {
@@ -175,13 +175,14 @@ while (( "$#" ))
 do
     ARG="$1" && shift || die "Missing argument"
     case $ARG in
-        init)
+        install)
             if [[ -e zoo.cfg ]]
             then
                 cp zoo.cfg configset/
                 export ZOOKEEPER_ID="$1" && shift || die "Cloud mode needs a zookeeper id"
                 [[ $ZOOKEEPER_ID =~ ^[0-9]+ ]] || die "Zookeeper id '$ZOOKEEPER_ID' should be and integer"
             fi
+            SOLR_DATA_VOLUME=${INSTALL_SOLR_DATA_VOLUME:-$SOLR_DATA_VOLUME}
             run
             migrate
             stop
