@@ -34,11 +34,12 @@ TELLUSR_RUN_PARAMS="-DzkRun"
 if [[ "$OSTYPE" == "darwin"* ]]
 then
     LOCALHOST="host.docker.internal"
-    TELLUSR_RUN_OPTIONS="--rm $TELLUSR_RUN_OPTIONS"
+    TELLUSR_RUN_HOST_OPTIONS=""
 else
     LOCALHOST="localhost"
-    TELLUSR_RUN_OPTIONS="--network=host --rm $TELLUSR_RUN_OPTIONS"
+    TELLUSR_RUN_HOST_OPTIONS="--network=host"
 fi
+TELLUSR_RUN_MODE_OPTIONS="--rm"
 
 ## Check if docker command needs to be run as sudo
 DOCKER=$(docker ps &> /dev/null && echo "docker" || echo "sudo docker")
@@ -54,19 +55,22 @@ function run {
     let ZOOKEEPER_PORT=SOLR_PORT+1000
     $DOCKER volume rm tellusr_solr_test_data 2> /dev/null || echo -n
     trace $DOCKER run \
-            -d ${TELLUSR_RUN_OPTIONS} \
-            -p ${SOLR_PORT} \
-            -p ${ZOOKEEPER_PORT} \
-            -e ZOOKEEPER_ID=${ZOOKEEPER_ID:-"1"} \
-            -e SOLR_HEAP=${SOLR_HEAP:-"4096m"} \
-            -e TELLUSR_BACKEND_URL=${BACKEND_URL:-"http://${LOCALHOST}:${BACKEND_PORT:-"8989"}"} \
-            -e SOLR_DISABLE_SECURITY_JSON="true" \
-            -e SOLR_PORT=$SOLR_PORT \
-            -v ${SOLR_DATA_VOLUME}:/var/solr \
-            -v $BUILD_ROOT/configset:/setup/configset \
-            --log-driver none \
-            --name ${SOLR_CONTAINER}_${SOLR_PORT} \
-            tellusr/demo:${TELLUSR_VERSION} $TELLUSR_RUN_PARAMS
+          -d \
+          ${TELLUSR_RUN_HOST_OPTIONS} \
+          ${TELLUSR_RUN_MODE_OPTIONS} \
+          ${TELLUSR_RUN_OPTIONS} \
+          -p ${SOLR_PORT} \
+          -p ${ZOOKEEPER_PORT} \
+          -e ZOOKEEPER_ID=${ZOOKEEPER_ID:-"1"} \
+          -e SOLR_HEAP=${SOLR_HEAP:-"4096m"} \
+          -e TELLUSR_BACKEND_URL=${BACKEND_URL:-"http://${LOCALHOST}:${BACKEND_PORT:-"8989"}"} \
+          -e SOLR_DISABLE_SECURITY_JSON="true" \
+          -e SOLR_PORT=$SOLR_PORT \
+          -v ${SOLR_DATA_VOLUME}:/var/solr \
+          -v $BUILD_ROOT/configset:/setup/configset \
+          --log-driver none \
+          --name ${SOLR_CONTAINER}_${SOLR_PORT} \
+          tellusr/demo:${TELLUSR_VERSION} $TELLUSR_RUN_PARAMS
     sleep 1
 }
 
@@ -170,6 +174,7 @@ function install {
     run
     migrate
     $DOCKER cp $PROJECT_DIR/zoo.cfg ${SOLR_CONTAINER}_${SOLR_PORT}:/var/solr/data/zoo.cfg
+    $DOCKER exec -u 0 -t ${SOLR_CONTAINER}_${SOLR_PORT} chown solr.solr /var/solr/data/zoo.cfg
     stop
 }
 
@@ -186,6 +191,8 @@ do
     case $ARG in
         uninstall)
             SOLR_DATA_VOLUME=${INSTALL_SOLR_DATA_VOLUME:-$SOLR_DATA_VOLUME}
+            stop
+            $DOCKER rm "${SOLR_CONTAINER}_${SOLR_PORT}"
             volume_drop
             ;;
         
@@ -206,6 +213,12 @@ do
             create $NEW_CORE
             ;;
 	run)
+	    run
+	    ;;
+
+	prod_run)
+            SOLR_DATA_VOLUME=${INSTALL_SOLR_DATA_VOLUME:-$SOLR_DATA_VOLUME}
+            TELLUSR_RUN_MODE_OPTIONS="--restart=always"
 	    run
 	    ;;
 
