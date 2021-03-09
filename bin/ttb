@@ -165,6 +165,15 @@ function die {
     exit 1
 }
 
+
+function install {
+    run
+    migrate
+    $DOCKER cp $PROJECT_DIR/zoo.cfg ${SOLR_CONTAINER}_${SOLR_PORT}:/var/solr/data/zoo.cfg
+    stop
+}
+
+
 # Default command
 if [ "$#" == "0" ]; then
     set -- $DEFAULT_TTB_COMMAND
@@ -178,14 +187,14 @@ do
         install)
             if [[ -e zoo.cfg ]]
             then
-                cp zoo.cfg configset/
                 export ZOOKEEPER_ID="$1" && shift || die "Cloud mode needs a zookeeper id"
                 [[ $ZOOKEEPER_ID =~ ^[0-9]+ ]] || die "Zookeeper id '$ZOOKEEPER_ID' should be and integer"
+                echo_zoo_cfg | grep -v 'server.' > $PROJECT_DIR/configset/zoo.cfg
+                echo "server.${ZOOKEEPER_ID}=localhost:2888:3888" >> $PROJECT_DIR/configset/zoo.cfg
             fi
             SOLR_DATA_VOLUME=${INSTALL_SOLR_DATA_VOLUME:-$SOLR_DATA_VOLUME}
-            run
-            migrate
-            stop
+            install
+            rm $PROJECT_DIR/configset/zoo.cfg
             ;;
         create)
             NEW_CORE="$1" && shift || die "Create needs a new core name"
