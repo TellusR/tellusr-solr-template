@@ -63,7 +63,7 @@ function run {
           -p ${ZOOKEEPER_PORT} \
           -e ZOOKEEPER_ID=${ZOOKEEPER_ID:-"1"} \
           -e SOLR_HEAP=${SOLR_HEAP:-"4096m"} \
-          -e TELLUSR_BACKEND_URL=${BACKEND_URL:-"http://${LOCALHOST}:${BACKEND_PORT:-"8989"}"} \
+          -e TELLUSR_CENTRAL_URL=${CENTRAL_URL:-"http://${LOCALHOST}:${CENTRAL_PORT:-"8989"}"} \
           -e SOLR_DISABLE_SECURITY_JSON="true" \
           -e SOLR_PORT=$SOLR_PORT \
           -v ${SOLR_DATA_VOLUME}:/var/solr \
@@ -218,6 +218,10 @@ do
 
 	prod_run)
             SOLR_DATA_VOLUME=${INSTALL_SOLR_DATA_VOLUME:-$SOLR_DATA_VOLUME}
+            if [ -n "$INSTALL_CENTRAL_URL" ]
+            then
+                CENTRAL_URL="$INSTALL_CENTRAL_URL"
+            fi
             TELLUSR_RUN_MODE_OPTIONS="--restart=always"
 	    run
 	    ;;
