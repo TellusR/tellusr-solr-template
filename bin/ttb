@@ -27,7 +27,7 @@ BUILD_ROOT=$PROJECT_DIR
 source "$PROJECT_DIR/tellusr.env"
 
 SOLR_PORT=${SOLR_PORT:-"8983"}
-SOLR_DATA_VOLUME="tellusr_solr_${PROJECT}_data_${SOLR_PORT}"
+SOLR_DATA_VOLUME=${SOLR_DATA_VOLUME:-"tellusr_solr_${PROJECT}_data_${SOLR_PORT}"}
 TELLUSR_RUN_PARAMS="-DzkRun"
 
 ## Docker on MacOS does not support --network=host, compensate
