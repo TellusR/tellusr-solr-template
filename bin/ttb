@@ -145,12 +145,6 @@ EOSCRIPT
 }
 
 
-function help {
-    CMD=${BASH_SOURCE[0]}
-    echo "$CMD volume_drop run migrate demo_migrate console stop"
-    echo "$CMD test|test_cloud|demo"
-}
-
 function create {
     NEW_CORE=$1
     TELLUSR_RUN_PARAMS="" 
@@ -160,6 +154,12 @@ function create {
     $DOCKER cp ${SOLR_CONTAINER}_${SOLR_PORT}:/var/solr/data/test/conf $BUILD_ROOT/configset/$NEW_CORE/conf
     stop
     volume_drop
+}
+
+
+function git_pull {
+    GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    git pull origin $GIT_BRANCH
 }
 
 
@@ -187,6 +187,13 @@ function install {
     $DOCKER exec -u 0 -t ${SOLR_CONTAINER}_${SOLR_PORT} chown solr.solr /var/solr/data/zoo.cfg
     stop
 }
+
+function help {
+    CMD=${BASH_SOURCE[0]}
+    echo "$CMD volume_drop run migrate git_pull update demo_migrate console stop"
+    echo "$CMD test|test_cloud|demo"
+}
+
 
 
 # Default command
@@ -218,6 +225,7 @@ do
             install
             rm $PROJECT_DIR/configset/zoo.cfg
             ;;
+
         create)
             NEW_CORE="$1" && shift || die "Create needs a new core name"
             create $NEW_CORE
@@ -226,6 +234,10 @@ do
         update)
             COLLECTION="$1" && shift || die "Update needs a collection name"
             update $COLLECTION
+            ;;
+        
+        git_pull)
+            git_pull
             ;;
         
 	run)
