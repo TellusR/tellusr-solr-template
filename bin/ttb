@@ -163,6 +163,16 @@ function create {
 }
 
 
+function update {
+    GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    git pull origin $GIT_BRANCH
+    COLLECTION=$1
+    let ZOOKEEPER_PORT=SOLR_PORT+1000
+    echo "Updating collection $COLLECTION"
+    trace docker exec -t "${SOLR_CONTAINER}_${SOLR_PORT}" zkcli.sh -zkhost "localhost:${ZOOKEEPER_PORT}" -cmd upconfig -confname "${COLLECTION}" -confdir "/setup/configset/${COLLECTION}/conf/"
+    trace curl "http://localhost:${SOLR_PORT}/solr/admin/collections?action=RELOAD&name=${COLLECTION}"
+}
+
 
 function die {
     echo $1
@@ -212,6 +222,12 @@ do
             NEW_CORE="$1" && shift || die "Create needs a new core name"
             create $NEW_CORE
             ;;
+
+        update)
+            COLLECTION="$1" && shift || die "Update needs a collection name"
+            update $COLLECTION
+            ;;
+        
 	run)
 	    run
 	    ;;
