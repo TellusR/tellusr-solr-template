@@ -157,15 +157,17 @@ function create {
 }
 
 
-function git_pull {
+function pull {
+    if [[ "$TELLUSR_VERSION" -eq "latest" ]]
+    then
+        docker pull tellusr/demo:$TELLUSR_VERSION
+    fi
     GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
     git pull origin $GIT_BRANCH
 }
 
 
 function update {
-    GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    git pull origin $GIT_BRANCH
     COLLECTION=$1
     let ZOOKEEPER_PORT=SOLR_PORT+1000
     echo "Updating collection $COLLECTION"
@@ -190,7 +192,7 @@ function install {
 
 function help {
     CMD=${BASH_SOURCE[0]}
-    echo "$CMD volume_drop run migrate git_pull update demo_migrate console stop"
+    echo "$CMD volume_drop run migrate pull update demo_migrate console stop"
     echo "$CMD test|test_cloud|demo"
 }
 
@@ -236,8 +238,8 @@ do
             update $COLLECTION
             ;;
         
-        git_pull)
-            git_pull
+        pull)
+            pull
             ;;
         
 	run)
