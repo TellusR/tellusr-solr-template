@@ -42,12 +42,35 @@ fi
 TELLUSR_RUN_MODE_OPTIONS="--rm"
 
 ## Check if docker command needs to be run as sudo
-DOCKER=$(docker ps &> /dev/null && echo "docker" || echo "sudo docker")
 
 function trace {
     set -x
     $@
     { set +x; } 2> /dev/null
+}
+
+function assume_docker() {
+  # Ask user to install docker if not yet installed
+  if [ ! "$(command -v docker)" ]; then
+    echo -n "No docker installation was found on this system."
+    case "$OSTYPE" in
+    linux-gnu*)
+      echo "On ubuntu you can install docker thus:"
+      echo "  sudo apt install docker.io"
+      echo "  sudo usermod -aG docker $USER"
+      ;;
+    darwin*)
+      echo "Installation instructions for macs are located at:"
+      echo "  https://docs.docker.com/docker-for-mac/install/"
+      ;;
+    *)
+      echo
+      ;;
+    esac
+    # If Docker isn't installed, we cannot go on, so abort the script:
+    exit 2
+  fi
+  DOCKER=$(docker ps &> /dev/null && echo "docker" || echo "sudo docker")
 }
 
 
@@ -163,7 +186,7 @@ function create {
 function pull {
     if [[ "$TELLUSR_VERSION" -eq "latest" ]]
     then
-        docker pull tellusr/demo:$TELLUSR_VERSION
+        $DOCKER pull tellusr/demo:$TELLUSR_VERSION
     fi
     GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
     git pull origin $GIT_BRANCH
@@ -174,7 +197,7 @@ function update {
     COLLECTION=$1
     let ZOOKEEPER_PORT=SOLR_PORT+1000
     echo "Updating collection $COLLECTION"
-    trace docker exec -t "${SOLR_CONTAINER}_${SOLR_PORT}" zkcli.sh -zkhost "localhost:${ZOOKEEPER_PORT}" -cmd upconfig -confname "${COLLECTION}" -confdir "/setup/configset/${COLLECTION}/conf/"
+    trace $DOCKER exec -t "${SOLR_CONTAINER}_${SOLR_PORT}" zkcli.sh -zkhost "localhost:${ZOOKEEPER_PORT}" -cmd upconfig -confname "${COLLECTION}" -confdir "/setup/configset/${COLLECTION}/conf/"
     trace curl "http://localhost:${SOLR_PORT}/solr/admin/collections?action=RELOAD&name=${COLLECTION}"
 }
 
@@ -200,6 +223,8 @@ function help {
 }
 
 
+# Check that docker is installed
+assume_docker
 
 # Default command
 if [ "$#" == "0" ]; then
