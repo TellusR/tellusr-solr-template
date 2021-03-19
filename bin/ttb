@@ -114,12 +114,12 @@ function stop {
 }
 
 function wait_for_solr {
-    $DOCKER exec -it ${SOLR_CONTAINER}_${SOLR_PORT} wait-for-solr.sh
+    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} wait-for-solr.sh
 }
 
 
 function wait_for_zookeeper {
-    $DOCKER exec -it ${SOLR_CONTAINER}_${SOLR_PORT} wait-for-zookeeper.sh
+    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} wait-for-zookeeper.sh
 }
 
 
@@ -146,12 +146,15 @@ EOSCRIPT
 
 
 function create {
-    NEW_CORE=$1
-    TELLUSR_RUN_PARAMS="" 
+    NEW_COLLECTION=$1
+    TELLUSR_RUN_PARAMS=""
     run
-    mkdir -p $BUILD_ROOT/configset/$NEW_CORE/
-    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} solr create_core -c test
-    $DOCKER cp ${SOLR_CONTAINER}_${SOLR_PORT}:/var/solr/data/test/conf $BUILD_ROOT/configset/$NEW_CORE/conf
+    mkdir -p $BUILD_ROOT/configset/$NEW_COLLECTION/
+    trace $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} solr create_core -c $NEW_COLLECTION
+    trace $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} /opt/tellusr/bin/append_snippet.sh $NEW_COLLECTION
+    trace $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} cp /opt/tellusr/resources/elevate.xml /var/solr/data/$NEW_COLLECTION/conf
+    trace $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} cp /opt/tellusr/resources/synonyms.txt /var/solr/data/$NEW_COLLECTION/conf
+    trace $DOCKER cp ${SOLR_CONTAINER}_${SOLR_PORT}:/var/solr/data/$NEW_COLLECTION/conf $BUILD_ROOT/configset/$NEW_COLLECTION/conf
     stop
     volume_drop
 }
@@ -229,8 +232,8 @@ do
             ;;
 
         create)
-            NEW_CORE="$1" && shift || die "Create needs a new core name"
-            create $NEW_CORE
+            NEW_COLLECTION="$1" && shift || die "Create needs a new core name"
+            create $NEW_COLLECTION
             ;;
 
         update)
