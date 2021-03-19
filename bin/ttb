@@ -77,6 +77,13 @@ function assume_docker() {
   DOCKER=$(docker ps &> /dev/null && echo "docker" || echo "sudo docker")
 }
 
+function assume_configset() {
+    if [ ! -d $SOLR_CONFIG_DIR ]
+    then
+        echo "Please create a core with 'bin/ttb create <collection name>'"
+        exit 3
+    fi
+}
 
 function run {
     let ZOOKEEPER_PORT=SOLR_PORT+1000
@@ -212,6 +219,7 @@ EOSCRIPT
 function create {
     NEW_COLLECTION=$1
     TELLUSR_RUN_PARAMS=""
+    mkdir -p $BUILD_ROOT/configset
     run
     mkdir -p $BUILD_ROOT/configset/$NEW_COLLECTION/
     trace $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} solr create_core -c $NEW_COLLECTION
@@ -303,6 +311,7 @@ do
             ;;
 
         update)
+            assume_configset
             COLLECTION="$1" && shift || die "Update needs a collection name"
             update $COLLECTION
             ;;
@@ -312,6 +321,7 @@ do
             ;;
         
 	run)
+            assume_configset
 	    run
 	    ;;
 
@@ -359,6 +369,7 @@ do
 	    ;;
 
 	test)
+            assume_configset
             volume_drop
 	    run
             wait_for_solr
@@ -368,6 +379,7 @@ do
 	    ;;
 
 	test_cloud)
+            assume_configset
             echo "Project: $PROJECT"
             mkdir -p configset
             echo_zoo_cfg > $PROJECT_DIR/configset/zoo.cfg

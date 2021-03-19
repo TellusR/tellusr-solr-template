@@ -36,7 +36,9 @@ To create a config with a blank template you can run:
 
 `bin/ttb create <collection name>`
 
-Where you replace <collection name> with the name of your collection. This will create new config files, based on the example files shipped with solr, with TellusR preconfigured.
+You should replace <collection name> with the name of your collection. This will create new config files, based on the example files shipped with solr, with TellusR preconfigured for a collection of that name. You will find the newly created files in the subdirectory `configset/<collection name>/conf/*`.
+
+
 
 
 
