@@ -15,7 +15,22 @@ The next step is to clone this git repository which includes a script `bin/ttb` 
 
 ```git clone https://github.com/tellusr/tellusr-solr-template.git```
 
-## Creating a new collection
+
+## Configure the Project
+
+Move into the root directory of the repository. Here you will find a default project template in the file `tellusr.env`:
+
+```
+PROJECT=default
+SOLR_PORT=8983
+SOLR_HEAP=4096m
+...
+```
+
+You should open this file in an editor and change the project name. If you already have another instance of solr running on port 8983 you might want to change solr port as well. Leave the rest as it is for now.
+
+
+## Create a new collection
 
 To create a config with a blank template you can run:
 

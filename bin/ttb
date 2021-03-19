@@ -22,11 +22,15 @@ SOLR_CONFIG_DIR=$PROJECT_DIR/configset
 SOLR_HOST="localhost"
 BUILD_ROOT=$PROJECT_DIR
 
+SOLR_PORT=${SOLR_PORT:-"8983"}
 
 ## Load local overrides for config variables
 source "$PROJECT_DIR/tellusr.env"
 
-SOLR_PORT=${SOLR_PORT:-"8983"}
+# Some test scripts may want to override the configured solr port to be
+# able to launch multiple solr instances in a cluster
+SOLR_PORT=${SOLR_PORT_OVERRIDE:-"$SOLR_PORT"}
+
 SOLR_DATA_VOLUME=${SOLR_DATA_VOLUME:-"tellusr_solr_${PROJECT}_data_${SOLR_PORT}"}
 TELLUSR_RUN_PARAMS="-DzkRun"
 
@@ -97,11 +101,48 @@ function run {
     sleep 1
 }
 
+
+function migrate_data_default {
+    # Put files named "${COLLECTION}_data.json" or "${COLLECTION}_tiny_data.json"
+    # in a subdirectory named test_data to use this auto import. The *_tiny_data.json
+    # files are by convention a small subset that you can commit into your repository.
+    # *_data.json are larger datasets that you might not want to put into version control
+
+    if [[ ! -d $PROJECT_DIR/test_data ]]
+    then
+        echo "No directory test_data. Skipping data migration"
+        return
+    fi
+    
+    echo "Migrating data"
+    SERVER="$SOLR_HOST:$SOLR_PORT"
+    CORES=$(find $BUILD_ROOT/configset/* -maxdepth 0 -type d -printf "%f ")
+
+    pushd $PROJECT_DIR/test_data
+    for CORE in $CORES
+    do
+        FILE=""
+        if [[ -f "${CORE}_data.json" ]]
+        then
+            FILE="${CORE}_data.json"
+        elif [[ -f "${CORE}_data_tiny.json" ]]
+        then
+            FILE="${CORE}_data_tiny.json"
+        else
+            continue
+        fi
+        curl -X POST -H 'Content-Type: application/json' "http://${SERVER}/solr/$CORE/update?commit=true" --data-binary @$FILE
+    done
+    popd
+}
+
 function _migrate_data {
     ## Check if migrate_data function is defined in tellusr.env, and if so run it
-    if [ _migrate_data_defined ]
+    if [ declare -F "migrate_data" &> /dev/null ]
     then
 	migrate_data $1 $2
+    else
+        migrate_data_default $1 $2
     fi
 }
 
@@ -333,8 +374,8 @@ do
             export TELLUSR_RUN_PARAMS="-DzkRun"
             let SOLR_PORT2=SOLR_PORT+1
             let SOLR_PORT3=SOLR_PORT+2
-            ENV2="env SOLR_PORT=$SOLR_PORT2 ZOOKEEPER_ID=2"
-            ENV3="env SOLR_PORT=$SOLR_PORT3 ZOOKEEPER_ID=3"
+            ENV2="env SOLR_PORT_OVERRIDE=$SOLR_PORT2 ZOOKEEPER_ID=2"
+            ENV3="env SOLR_PORT_OVERRIDE=$SOLR_PORT3 ZOOKEEPER_ID=3"
             CMD=${BASH_SOURCE[0]}
             stop; $ENV2 $CMD stop; $ENV3 $CMD stop
             volume_drop; $ENV2 $CMD volume_drop; $ENV3 $CMD volume_drop
