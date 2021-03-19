@@ -1,16 +1,27 @@
-# README #
+# Tellusr Solr Template
 
-### What is this repository for? ###
+## Introduction
 
-A starting template for new solr projects that wants to use tellusr.
+This is a solr template for new projects that wants to use [TellusR](https://www.tellusr.com/). It uses the the [tellusr/demo](https://hub.docker.com/repository/docker/tellusr/demo) docker image. This is built on top of the official [solr](https://hub.docker.com/repository/docker/tellusr/demo) docker image but with TellusR configuration and extensions prepackaged. It includes a script that will help you quickly get started.
 
-### How do I get set up? ###
+TellusR consists of three main components. A control dashboard (tellusr/central), a natural language service (tellusr/nlp) and integration plugin for solr (tellusr-integrator-*.jar). Together they add advanced features and usability to solr, which you can read about at the [TellusR](https://www.tellusr.com/) site. Developer documentation is available at the [Documentation site](http://docs.tellusr.com/).
 
-Change the folder name of `configset/default` to the core name you wish.
-You may copy the folder recursively to new names if you need more cores.
 
-Run `bin/ttb` to start solr on with your config. Use CTRL+D to exit. The
-setup is rebuilt every time to restart.
+## Prerequisites
 
-You can add code for migrating test data in `tellusr.env`. Here you can also
-override configuration variables.
+Before you start you should make sure that docker is installed and running on your machine. How to do this vary between computers, and you should consult the [docker documentation](https://docs.docker.com/get-docker/) about how to do this on your own machine. We recommend a sudoless install.
+
+The next step is to clone this git repository which includes a script `bin/ttb` which will help to test and develop your schema. This should work on Linux and Mac.
+
+```git clone https://github.com/tellusr/tellusr-solr-template.git```
+
+## Creating a new collection
+
+To create a config with a blank template you can run:
+
+`bin/ttb create <collection name>`
+
+Where you replace <collection name> with the name of your collection. This will create new config files, based on the example files shipped with solr, with TellusR preconfigured.
+
+
+
