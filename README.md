@@ -36,7 +36,19 @@ To create a config with a blank template you can run:
 
 `bin/ttb create new_collection`
 
-You should replace `new_collection` with the name you want for your collection. Avoid spaces and special characters. This will create new config files, based on the example files shipped with solr, with TellusR preconfigured for a collection of that name. You will find the newly created files in the subdirectory `configset/<collection name>/conf/*`.
+You should replace `new_collection` with the name you want for your collection. Avoid spaces and special characters. This will create new config files, based on the example files shipped with solr, with TellusR preconfigured for a collection of that name. You will find the newly created files in the subdirectory `configset/<collection name>/conf/*`. You can edit them here.
+
+## Test your new collection
+
+To test a core you can run:
+
+`bin/ttb test`
+
+This will start up an instance of solr, migrate your schema (and test_data, if you have added any). You end up in a bash console which runs inside the docker container running solr with tellusr. If you did not change the port number above, you can check the running solr instance by going to:
+
+[http://localhost:8983/](http://localhost:8983/)
+
+You can exit the test with CTRL+D or by the command `exit` in the console, and restart the test by rerunning `bin/ttb test`.
 
 
 
