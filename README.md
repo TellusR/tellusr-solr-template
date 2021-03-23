@@ -92,12 +92,11 @@ Where $ZOOKEEPER_ID is a number between 1 and 3.
 To import the your schema to the zookeeper cluster you should now run the following on *one of the servers*:
 
 ```
-bin/ttb migarte
+bin/ttb migrate
 ```
 
-Later you can update the schema files in all collections by running:
+Later you can update the config files in all collections by running:
 
 ```
 bin/ttb update_all
 ```
-
