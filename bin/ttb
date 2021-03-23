@@ -8,24 +8,24 @@ TELLUSR_VERSION=${TELLUSR_VERSION:-"latest"}
 
 ## Some default project config variables
 PROJECT=default
-PROJECT_DIR=.
+PROJECT_HOME=.
 if [ -f "./tellusr.env" ]; then
-    PROJECT_DIR=`realpath "."`
+    PROJECT_HOME=`realpath "."`
 elif [ -f "../tellusr.env" ]; then
-    PROJECT_DIR=`realpath ".."`
+    PROJECT_HOME=`realpath ".."`
 elif [ -f "../../tellusr.env" ]; then
-    PROJECT_DIR=`realpath "../.."`
+    PROJECT_HOME=`realpath "../.."`
 elif [ -f "../../../tellusr.env" ]; then
-    PROJECT_DIR=`realpath "../../.."`
+    PROJECT_HOME=`realpath "../../.."`
 fi
-SOLR_CONFIG_DIR=$PROJECT_DIR/configset
+SOLR_CONFIG_DIR=$PROJECT_HOME/configset
 SOLR_HOST="localhost"
-BUILD_ROOT=$PROJECT_DIR
+BUILD_ROOT=$PROJECT_HOME
 
 SOLR_PORT=${SOLR_PORT:-"8983"}
 
 ## Load local overrides for config variables
-source "$PROJECT_DIR/tellusr.env"
+source "$PROJECT_HOME/tellusr.env"
 
 # Some test scripts may want to override the configured solr port to be
 # able to launch multiple solr instances in a cluster
@@ -115,7 +115,7 @@ function migrate_data_default {
     # files are by convention a small subset that you can commit into your repository.
     # *_data.json are larger datasets that you might not want to put into version control
 
-    if [[ ! -d $PROJECT_DIR/test_data ]]
+    if [[ ! -d $PROJECT_HOME/test_data ]]
     then
         echo "No directory test_data. Skipping data migration"
         return
@@ -125,7 +125,7 @@ function migrate_data_default {
     SERVER="$SOLR_HOST:$SOLR_PORT"
     CORES=$(find $BUILD_ROOT/configset/* -maxdepth 0 -type d -printf "%f ")
 
-    pushd $PROJECT_DIR/test_data
+    pushd $PROJECT_HOME/test_data
     for CORE in $CORES
     do
         FILE=""
@@ -250,6 +250,10 @@ function update {
     trace curl "http://localhost:${SOLR_PORT}/solr/admin/collections?action=RELOAD&name=${COLLECTION}"
 }
 
+function update_all {
+    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} update_collections.sh
+}
+
 
 function die {
     echo $1
@@ -260,7 +264,7 @@ function die {
 function install {
     run
     migrate
-    $DOCKER cp $PROJECT_DIR/zoo.cfg ${SOLR_CONTAINER}_${SOLR_PORT}:/var/solr/data/zoo.cfg
+    $DOCKER cp $PROJECT_HOME/zoo.cfg ${SOLR_CONTAINER}_${SOLR_PORT}:/var/solr/data/zoo.cfg
     $DOCKER exec -u 0 -t ${SOLR_CONTAINER}_${SOLR_PORT} chown solr.solr /var/solr/data/zoo.cfg
     stop
 }
@@ -297,12 +301,12 @@ do
             then
                 export ZOOKEEPER_ID="$1" && shift || die "Cloud mode needs a zookeeper id"
                 [[ $ZOOKEEPER_ID =~ ^[0-9]+ ]] || die "Zookeeper id '$ZOOKEEPER_ID' should be and integer"
-                echo_zoo_cfg | grep -v 'server.' > $PROJECT_DIR/configset/zoo.cfg
-                echo "server.${ZOOKEEPER_ID}=localhost:2888:3888" >> $PROJECT_DIR/configset/zoo.cfg
+                echo_zoo_cfg | grep -v 'server.' > $PROJECT_HOME/configset/zoo.cfg
+                echo "server.${ZOOKEEPER_ID}=localhost:2888:3888" >> $PROJECT_HOME/configset/zoo.cfg
             fi
             SOLR_DATA_VOLUME=${INSTALL_SOLR_DATA_VOLUME:-$SOLR_DATA_VOLUME}
             install
-            rm $PROJECT_DIR/configset/zoo.cfg
+            rm $PROJECT_HOME/configset/zoo.cfg
             ;;
 
         create)
@@ -313,6 +317,11 @@ do
         update)
             assume_configset
             COLLECTION="$1" && shift || die "Update needs a collection name"
+            update $COLLECTION
+            ;;
+        
+        update_all)
+            assume_configset
             update $COLLECTION
             ;;
         
@@ -382,7 +391,7 @@ do
             assume_configset
             echo "Project: $PROJECT"
             mkdir -p configset
-            echo_zoo_cfg > $PROJECT_DIR/configset/zoo.cfg
+            echo_zoo_cfg > $PROJECT_HOME/configset/zoo.cfg
             export TELLUSR_RUN_PARAMS="-DzkRun"
             let SOLR_PORT2=SOLR_PORT+1
             let SOLR_PORT3=SOLR_PORT+2
@@ -395,7 +404,7 @@ do
             migrate
             console
             stop; $ENV2 $CMD stop; $ENV3 $CMD stop
-            rm $PROJECT_DIR/configset/zoo.cfg
+            rm $PROJECT_HOME/configset/zoo.cfg
 	    ;;
 
         help)
