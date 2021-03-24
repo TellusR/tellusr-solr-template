@@ -16,9 +16,6 @@ dist/
 # Log files
 *.log
 
-# Package files
-*.jar
-
 # Maven
 target/
 dist/
@@ -48,3 +45,8 @@ Thumbs.db
 *.mov
 *.wmv
 
+# Large test data files
+*_data.json
+
+# Files or directories named tmp or prefixed
+tmp*
