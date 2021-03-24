@@ -309,8 +309,19 @@ do
             rm $PROJECT_HOME/configset/zoo.cfg
             ;;
 
-        tellusr_install)
+        tellusr_install_prod_mode)
+            curl -s https://dist.tellusr.com/tellusr.sh | bash -s prod_mode
             curl -s https://dist.tellusr.com/tellusr.sh | bash -s upgrade
+            ;;
+
+        tellusr_install_test_mode)
+            curl -s https://dist.tellusr.com/tellusr.sh | bash -s test_mode
+            curl -s https://dist.tellusr.com/tellusr.sh | bash -s upgrade
+            ;;
+
+        tellusr)
+            COMMAND="$1" && shift
+            curl -s https://dist.tellusr.com/tellusr.sh | bash -s ${COMMAND:-"help"}
             ;;
 
         create)

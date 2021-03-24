@@ -80,7 +80,7 @@ Before installing the TellusR central and nlp you should head over to [https://w
 You can then download and start the tellusr/central and tellusr/nlp servers with:
 
 ```
-bin/ttb tellusr_install
+bin/ttb tellusr_install_test_mode
 ```
 
 When this is done you should open the dashboard of tellusr/central by going to [http://localhost:8989/](http://localhost:8989/).
@@ -109,7 +109,7 @@ Then you need to open the following ports between the servers in the firewall:
 Now you are ready to run the installation scripts. On the server where you want to have TellusR installed you can run:
 
 ```
-bin/ttb tellusr_install
+bin/ttb tellusr_install_prod_mode
 ```
 
 On the servers where you want solr to run, you should do:
