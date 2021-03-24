@@ -24,7 +24,7 @@ git remote add tellusr https://github.com/tellusr/tellusr-solr-template.git
 git checkout --orphan template
 git pull tellusr template
 git checkout master
-git merge template
+git merge template --allow-unrelated-histories
 ```
 
 This will check out the tellusr-solr-template into a new branch template and merge it into your master branch.
