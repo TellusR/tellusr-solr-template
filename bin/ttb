@@ -309,6 +309,10 @@ do
             rm $PROJECT_HOME/configset/zoo.cfg
             ;;
 
+        tellusr_install)
+            curl -s https://dist.tellusr.com/tellusr.sh | bash -s upgrade
+            ;;
+
         create)
             NEW_COLLECTION="$1" && shift || die "Create needs a new core name"
             create $NEW_COLLECTION
