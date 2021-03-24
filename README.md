@@ -17,7 +17,7 @@ The next step is to clone this git repository which includes a script `bin/ttb` 
 git clone https://github.com/tellusr/tellusr-solr-template.git
 ```
 
-Or you can add it to an existing repository by doing:
+Or you can add it to an existing project repository by doing:
 
 ```
 git remote add tellusr https://github.com/tellusr/tellusr-solr-template.git
@@ -27,6 +27,7 @@ git checkout master
 git merge template
 ```
 
+This will check out the tellusr-solr-template into a new branch template and merge it into your master branch.
 
 
 ## Configure the Project
