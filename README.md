@@ -1,4 +1,4 @@
-# Tellusr Solr Template
+﻿# Tellusr Solr Template
 
 ## Introduction
 
@@ -47,11 +47,11 @@ The tellusr.env is in bash script format.
 
 ## Create a new collection
 
-To create a config with a blank template you can run:
+To create a configuration with a blank template you can run:
 
 `bin/ttb create new_collection`
 
-You should replace `new_collection` with the name you want for your collection. Avoid spaces and special characters. This will create new config files, based on the example files shipped with Solr, with TellusR preconfigured for a collection of that name. You will find the newly created files in the subdirectory `configset/<collection name>/conf/*`. You can edit them there.
+You should replace `new_collection` with the name you want for your collection. Avoid spaces and special characters. This will create new configuration files, based on the example files shipped with Solr, with TellusR preconfigured for a collection of that name. You will find the newly created files in the sub directory `configset/<collection name>/conf/*`. You can edit them there.
 
 
 ## Test your new collection
@@ -66,9 +66,9 @@ This will start up an instance of Solr, migrate your schema (and test_data, if y
 
 You can exit the test with CTRL+D or by the command `exit` in the console, and restart the test by rerunning `bin/ttb test`.
 
-## Creating a set of testdata
+## Creating a Set of Test Data
 
-You can add a set of test data that will be auto imported when you run a test by putting a json file in a subdirectory of `$PROJECT_HOME` (which is the directory where the tellusr.env resides) named test_data. This file should be called `${COLLECTION}_data.json` where `${COLLECTION}` is the name of the collection that the data should be imported into. If this is too big to commit into your project, you can keep a smaller set in a file named `${COLLECTION}_data_tiny.json`, which will be used when `${COLLECTION}_data.json` is not found.
+You can add a set of test data that will be auto imported when you run a test by putting a json file in a sub directory of `$PROJECT_HOME` (which is the directory where the tellusr.env resides) named test_data. This file should be called `${COLLECTION}_data.json` where `${COLLECTION}` is the name of the collection that the data should be imported into. If this is too big to commit into your project, you can keep a smaller set in a file named `${COLLECTION}_data_tiny.json`, which will be used when `${COLLECTION}_data.json` is not found.
 
 If this does not fit your needs, you can write your own custom import of data by implementing a function `migrate_data` in tellusr.env
 
@@ -98,7 +98,7 @@ bin/ttb tellusr stop
 
 ## Deploying a Solr Cluster to Prod
 
-A typical production deployment may contain three Solr instances that communicate toghether via ZooKeeper. (It should always be an [odd number of instances](https://solr.apache.org/guide/8_8/setting-up-an-external-zookeeper-ensemble.html).) You then first need to modify the foolowing lines `zoo.cfg` template included in `$PROJECT_HOME`:
+A typical production deployment may contain three Solr instances that communicate together via ZooKeeper. (It should always be an [odd number of instances](https://solr.apache.org/guide/8_8/setting-up-an-external-zookeeper-ensemble.html).) You then first need to modify the following lines `zoo.cfg` template included in `$PROJECT_HOME`:
 
 ```
 server.1=localhost:2888:3888
@@ -106,7 +106,7 @@ server.2=localhost:2889:3889
 server.3=localhost:2890:3890
 ```
 
-`localhost` should be the IP address of the different servers. For convienience you should (if they run on different IPs), run them all on the same ports. We will in these instructions assume that you are running them on ports 2888 and 3888 as for `server.1` above.
+`localhost` should be the IP address of the different servers. For convenience you should (if they run on different IPs), run them all on the same ports. We will in these instructions assume that you are running them on ports 2888 and 3888 as for `server.1` above.
 
 Then you need to open the following ports between the servers in the firewall:
 
@@ -135,7 +135,7 @@ To import the your schema to the zookeeper cluster you should now run the follow
 bin/ttb migrate
 ```
 
-Later you can update the config files in all collections by running:
+Later you can update the configuration files in all collections by running:
 
 ```
 bin/ttb update_all
