@@ -68,7 +68,7 @@ You can exit the test with CTRL+D or by the command `exit` in the console, and r
 
 ## Creating a set of testdata
 
-You can add a set of test data that will be auto imported when you run a test by putting a json file in a subdirectory of `$PROJECT_HOME` (which is the directory where the tellusr.env resides) named test_data. This file should be called `${COLLECTION}_data.json` where ${COLLECTION} is the name of the collection that the data should be imported into. If this is too big to commit into your project, you can keep a smaller set in a file named `${COLLECTION}_data_tiny.json`, which will be used when `${COLLECTION}_data.json` is not found.
+You can add a set of test data that will be auto imported when you run a test by putting a json file in a subdirectory of `$PROJECT_HOME` (which is the directory where the tellusr.env resides) named test_data. This file should be called `${COLLECTION}_data.json` where `${COLLECTION}` is the name of the collection that the data should be imported into. If this is too big to commit into your project, you can keep a smaller set in a file named `${COLLECTION}_data_tiny.json`, which will be used when `${COLLECTION}_data.json` is not found.
 
 If this does not fit your needs, you can write your own custom import of data by implementing a function `migrate_data` in tellusr.env
 
