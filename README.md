@@ -13,7 +13,9 @@ Before you start you should make sure that docker is installed and running on yo
 
 The next step is to clone this git repository which includes a script `bin/ttb` which will help to test and develop your schema. This should work on Linux and Mac.
 
-```git clone https://github.com/tellusr/tellusr-solr-template.git```
+```
+git clone https://github.com/tellusr/tellusr-solr-template.git
+```
 
 
 ## Configure the Project
@@ -27,6 +29,8 @@ SOLR_HEAP=4096m
 ```
 
 You should open this file in an editor and change the project name. If you already have another instance of solr running on port 8983 you might want to change solr port as well. Leave the rest as it is for now.
+
+The tellusr.env is in bash script format.
 
 
 ## Create a new collection
@@ -54,10 +58,12 @@ You can exit the test with CTRL+D or by the command `exit` in the console, and r
 
 You can add a set of test data that will be auto imported when you run a test by putting a json file in a subdirectory of `$PROJECT_HOME` (which is the directory where the tellusr.env resides) named test_data. This file should be called `${COLLECTION}_data.json` where ${COLLECTION} is the name of the collection that the data should be imported into. If this is too big to commit into your project, you can keep a smaller set in a file named `${COLLECTION}_data_tiny.json`, which will be used when `${COLLECTION}_data.json` is not found.
 
+If this does not fit your needs, you can write your own custom import of data by implementing a function `migrate_data` in tellusr.env
+
 
 ## Deploying a Solr Cluster to Prod
 
-A typical production deployment may contain three solr instances that communicate toghether via zookeeper. (It should always be an [odd number of instances](https://solr.apache.org/guide/8_8/setting-up-an-external-zookeeper-ensemble.html).) You then first need to modify the foolowing lines zoo.cfg template included in $PROJECT_HOME:
+A typical production deployment may contain three solr instances that communicate toghether via zookeeper. (It should always be an [odd number of instances](https://solr.apache.org/guide/8_8/setting-up-an-external-zookeeper-ensemble.html).) You then first need to modify the foolowing lines `zoo.cfg` template included in `$PROJECT_HOME`:
 
 ```
 server.1=localhost:2888:3888
@@ -82,11 +88,11 @@ bin/ttb tellusr_install
 On the servers where you want solr to run, you should do:
 
 ```
-bin/ttb install $ZOOKEEPER_ID
+bin/ttb install <zookeeper id>
 bin/ttb prod_run
 ```
 
-Where `$ZOOKEEPER_ID` is a number between 1 and 3.
+Where `<zookeeper id>` is a number between 1 and 3.
 
 To import the your schema to the zookeeper cluster you should now run the following on *one of the servers*:
 
