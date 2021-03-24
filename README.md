@@ -24,7 +24,6 @@ Move into the root directory of the repository. Here you will find a default pro
 PROJECT=default
 SOLR_PORT=8983
 SOLR_HEAP=4096m
-...
 ```
 
 You should open this file in an editor and change the project name. If you already have another instance of solr running on port 8983 you might want to change solr port as well. Leave the rest as it is for now.
@@ -43,7 +42,7 @@ You should replace `new_collection` with the name you want for your collection. 
 
 To test a core you can run:
 
-`bin/ttb test`
+```bin/ttb test```
 
 This will start up an instance of solr, migrate your schema (and test_data, if you have added any). You end up in a bash console which runs inside the docker container running solr with tellusr. If you did not change the port number above, you can check the running solr instance by going to:
 
@@ -53,7 +52,7 @@ You can exit the test with CTRL+D or by the command `exit` in the console, and r
 
 ## Creating a set of testdata
 
-You can add a set of test data that will be auto imported when you run a test by putting a json file in a subdirectory of $PROJECT_HOME (which is the directory where the tellusr.env resides) named test_data. This file should be called `${COLLECTION}_data.json` where ${COLLECTION} is the name of the collection that the data should be imported into. If this is too big to commit into your project, you can keep a smaller set in a file named `${COLLECTION}_data_tiny.json`, which will be used when `${COLLECTION}_data.json` is not found.
+You can add a set of test data that will be auto imported when you run a test by putting a json file in a subdirectory of `$PROJECT_HOME` (which is the directory where the tellusr.env resides) named test_data. This file should be called `${COLLECTION}_data.json` where ${COLLECTION} is the name of the collection that the data should be imported into. If this is too big to commit into your project, you can keep a smaller set in a file named `${COLLECTION}_data_tiny.json`, which will be used when `${COLLECTION}_data.json` is not found.
 
 
 ## Deploying a Solr Cluster to Prod
@@ -87,7 +86,7 @@ bin/ttb install $ZOOKEEPER_ID
 bin/ttb prod_run
 ```
 
-Where $ZOOKEEPER_ID is a number between 1 and 3.
+Where `$ZOOKEEPER_ID` is a number between 1 and 3.
 
 To import the your schema to the zookeeper cluster you should now run the following on *one of the servers*:
 
