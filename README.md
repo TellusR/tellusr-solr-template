@@ -27,7 +27,7 @@ git checkout master
 git merge template --allow-unrelated-histories
 ```
 
-This will check out the tellusr-solr-template into a new branch template and merge it into your master branch.
+This will check out the tellusr-solr-template into a new branch `template` and merge it into your master branch.
 
 
 ## Configure the Project
