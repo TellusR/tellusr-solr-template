@@ -273,6 +273,8 @@ function help {
     CMD=${BASH_SOURCE[0]}
     echo "$CMD volume_drop run migrate pull update demo_migrate console stop"
     echo "$CMD test|test_cloud|demo"
+    echo "$CMD tellusr_install_test_mode|tellusr_install_prod_mode|tellusr"
+    echo "$CMD install|prod_run|uninstall|update|update_all"
 }
 
 
