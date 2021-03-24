@@ -61,6 +61,21 @@ You can add a set of test data that will be auto imported when you run a test by
 If this does not fit your needs, you can write your own custom import of data by implementing a function `migrate_data` in tellusr.env
 
 
+## Install TellusR central and nlp
+
+Before installing the TellusR central and nlp you should head over to [https://www.tellusr.com/](https://www.tellusr.com/) and get a license key. A one month free trial and a free basic edition keys are available.
+
+You can then download and start the tellusr/central and tellusr/nlp servers with:
+
+```
+bin/ttb tellusr_install
+```
+
+When this is done you should open the dashboard of tellusr/central by going to [http://localhost:8989/](http://localhost:8989/).
+
+The configuration files for the install will be located in a file `$HOME/.tellusr/tellusr.config`. You can stop and start your tellusr with a script located at `$HOME/.tellusr/bin/tellusr.sh`.
+
+
 ## Deploying a Solr Cluster to Prod
 
 A typical production deployment may contain three solr instances that communicate toghether via zookeeper. (It should always be an [odd number of instances](https://solr.apache.org/guide/8_8/setting-up-an-external-zookeeper-ensemble.html).) You then first need to modify the foolowing lines `zoo.cfg` template included in `$PROJECT_HOME`:
