@@ -236,7 +236,7 @@ function create {
 }
 
 
-function pull {
+function git_pull {
     GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
     git pull origin $GIT_BRANCH
 }
@@ -265,7 +265,7 @@ function prod_stop {
     fi
 }
 
-function prod_pull {
+function docker_pull {
     $DOCKER pull tellusr/demo:$TELLUSR_VERSION
 }
 
@@ -371,7 +371,16 @@ do
             ;;
         
         pull)
-            pull
+            git_pull
+            docker_pull
+            ;;
+        
+        git_pull)
+            git_pull
+            ;;
+        
+        docker_pull)
+            docker_pull
             ;;
         
 	run)
@@ -384,7 +393,7 @@ do
 	    ;;
 
 	prod_pull)
-            prod_pull
+            docker_pull
             prod_stop
             prod_run
 	    ;;
