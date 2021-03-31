@@ -8,16 +8,20 @@ TELLUSR_VERSION=${TELLUSR_VERSION:-"latest"}
 
 ## Some default project config variables
 PROJECT=default
-PROJECT_HOME=.
+PROJECT_PATH=.
 if [ -f "./tellusr.env" ]; then
-    PROJECT_HOME=`realpath "."`
+    PROJECT_PATH="."
 elif [ -f "../tellusr.env" ]; then
-    PROJECT_HOME=`realpath ".."`
+    PROJECT_PATH=".."
 elif [ -f "../../tellusr.env" ]; then
-    PROJECT_HOME=`realpath "../.."`
+    PROJECT_PATH="../.."
 elif [ -f "../../../tellusr.env" ]; then
-    PROJECT_HOME=`realpath "../../.."`
+    PROJECT_PATH="../../.."
+elif [ -f "../../../../tellusr.env" ]; then
+    PROJECT_PATH="../../../.."
 fi
+PROJECT_HOME="$( cd "${PROJECT_PATH}" >/dev/null 2>&1 && pwd )"
+
 SOLR_CONFIG_DIR=$PROJECT_HOME/configset
 SOLR_HOST="localhost"
 BUILD_ROOT=$PROJECT_HOME
@@ -93,8 +97,8 @@ function run {
           ${TELLUSR_RUN_HOST_OPTIONS} \
           ${TELLUSR_RUN_MODE_OPTIONS} \
           ${TELLUSR_RUN_OPTIONS} \
-          -p ${SOLR_PORT} \
-          -p ${ZOOKEEPER_PORT} \
+          -p ${SOLR_PORT}:${SOLR_PORT} \
+          -p ${ZOOKEEPER_PORT}:${ZOOKEEPER_PORT} \
           -e ZOOKEEPER_ID=${ZOOKEEPER_ID:-"1"} \
           -e SOLR_HEAP=${SOLR_HEAP:-"4096m"} \
           -e TELLUSR_CENTRAL_URL=${CENTRAL_URL:-"http://${LOCALHOST}:${CENTRAL_PORT:-"8989"}"} \
