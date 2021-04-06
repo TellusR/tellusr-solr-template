@@ -169,6 +169,14 @@ function migrate {
     _migrate_data $SOLR_HOST $PORT
 }
 
+
+function demo_create_core {
+    wait_for_solr
+    echo -n "Attached to: "
+    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} demo_create_core.sh
+}
+
+
 function demo_migrate {
     wait_for_solr
     echo -n "Attached to: "
@@ -424,9 +432,11 @@ do
 
 	demo)
             volume_drop
+            # Do not run demo in cloud mode
+            TELLUSR_RUN_PARAMS=""
 	    run
-            migrate
-            demo_migrate
+            # Create and populate tellusr-demo core
+            demo_create_core
             console
             stop
 	    ;;
