@@ -392,37 +392,53 @@ do
             ;;
         
 	run)
+            # Output an error if no configset exists
             assume_configset
+            # Start the docker container with solr
 	    run
 	    ;;
 
 	prod_run)
+            # Run the container in prod mode. In this mode the container
+            # will restart after reboot of the machine
             prod_run
 	    ;;
 
 	prod_pull)
+            # Update to the latest version of the docker container
+            # and restart it in prod mode
             docker_pull
             prod_stop
             prod_run
 	    ;;
 
 	stop)
+            # Stop docker container
 	    stop
 	    ;;
 
 	migrate)
+            # Create collections and migrate data (if any)
 	    migrate
 	    ;;
 
+        migrate_data)
+            # Only migrate data
+            _migrate_data $SOLR_HOST $PORT
+            ;;
+
 	demo_migrate)
+            # Migrate demo data into collections
 	    demo_migrate
 	    ;;
 
 	console)
+            # Enter a bash console for the solr docker container
 	    console
 	    ;;
 
 	volume_drop)
+            # Drop volume with solr data
 	    volume_drop
 	    ;;
 
