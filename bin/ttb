@@ -299,7 +299,6 @@ function die {
 
 function install {
     run
-    migrate
     $DOCKER cp $PROJECT_HOME/zoo.cfg ${SOLR_CONTAINER}_${SOLR_PORT}:/var/solr/data/zoo.cfg
     $DOCKER exec -u 0 -t ${SOLR_CONTAINER}_${SOLR_PORT} chown solr.solr /var/solr/data/zoo.cfg
     stop
