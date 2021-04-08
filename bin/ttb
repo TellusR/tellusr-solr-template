@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEFAULT_TTB_COMMAND=${DEFAULT_TTB_COMMAND:-"test"}
+DEFAULT_TTB_COMMAND=${DEFAULT_TTB_COMMAND:-"help"}
 SCRIPT_NAME=`basename "${BASH_SOURCE[0]}"`
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SOLR_CONTAINER=tellusr_solr
