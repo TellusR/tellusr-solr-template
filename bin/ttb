@@ -403,6 +403,12 @@ do
             prod_run
 	    ;;
 
+	prod_stop)
+            # Run the container in prod mode. In this mode the container
+            # will restart after reboot of the machine
+            prod_stop
+	    ;;
+
 	prod_pull)
             # Update to the latest version of the docker container
             # and restart it in prod mode
