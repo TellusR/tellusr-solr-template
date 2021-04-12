@@ -171,7 +171,7 @@ function stress_test {
     if [ -n "$STRESS_TEST_COMMAND" ]
     then
         echo "Running stress test"
-        trace docker exec -it tellusr_solr_8983 $STRESS_TEST_COMMAND
+        trace docker exec -t tellusr_solr_8983 $STRESS_TEST_COMMAND
     else
         echo "STRESS_TEST_COMMAND is not defined"
     fi
