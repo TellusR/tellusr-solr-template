@@ -166,6 +166,17 @@ function _migrate_data {
     fi
 }
 
+function stress_test {
+    ## Check if migrate_data function is defined in tellusr.env, and if so run it
+    if [ -n "$STRESS_TEST_COMMAND" ]
+    then
+        echo "Running stress test"
+        trace docker exec -it tellusr_solr_8983 $STRESS_TEST_COMMAND
+    else
+        echo "STRESS_TEST_COMMAND is not defined"
+    fi
+}
+
 function volume_drop {
     echo -n "Dropping volume: "
     $DOCKER volume rm ${SOLR_DATA_VOLUME}
@@ -439,6 +450,11 @@ do
         migrate_data)
             # Only migrate data
             _migrate_data $SOLR_HOST $PORT
+            ;;
+
+        stress_test)
+            # Only migrate data
+            stress_test $SOLR_HOST $PORT
             ;;
 
 	demo_migrate)
