@@ -5,6 +5,9 @@ SCRIPT_NAME=`basename "${BASH_SOURCE[0]}"`
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SOLR_CONTAINER=tellusr_solr
 TELLUSR_VERSION=${TELLUSR_VERSION:-"latest"}
+if [[ $- == *x* ]]; then
+  TRACE_MODE=t
+fi
 
 ## Some default project config variables
 PROJECT=default
@@ -52,9 +55,15 @@ TELLUSR_RUN_MODE_OPTIONS="--rm"
 ## Check if docker command needs to be run as sudo
 
 function trace {
-    set -x
+    if [[ -z TRACE_MODE ]]
+    then
+        set -x
+    fi
     $@
-    { set +x; } 2> /dev/null
+    if [[ -z TRACE_MODE ]]
+    then
+        { set +x; } 2> /dev/null
+    fi
 }
 
 function assume_docker() {
