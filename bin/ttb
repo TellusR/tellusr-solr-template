@@ -491,7 +491,6 @@ do
 
 	test)
             assume_configset
-            volume_drop
 	    run
             wait_for_solr
             migrate
