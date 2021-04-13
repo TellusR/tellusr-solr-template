@@ -40,6 +40,7 @@ SOLR_PORT=${SOLR_PORT_OVERRIDE:-"$SOLR_PORT"}
 
 SOLR_DATA_VOLUME=${SOLR_DATA_VOLUME:-"tellusr_solr_${PROJECT}_data_${SOLR_PORT}"}
 TELLUSR_RUN_PARAMS="-DzkRun"
+TELLUSR_RUN_EXTRA_VOLUMES=""
 
 ## Docker on MacOS does not support --network=host, compensate
 if [[ "$OSTYPE" == "darwin"* ]]
@@ -113,8 +114,8 @@ function run {
           -e TELLUSR_CENTRAL_URL=${CENTRAL_URL:-"http://${LOCALHOST}:${CENTRAL_PORT:-"8989"}"} \
           -e SOLR_DISABLE_SECURITY_JSON="true" \
           -e SOLR_PORT=$SOLR_PORT \
-          -v ${SOLR_DATA_VOLUME}:/var/solr \
           -v $BUILD_ROOT/configset:/setup/configset \
+          ${TELLUSR_RUN_EXTRA_VOLUMES} \
           --log-driver none \
           --name ${SOLR_CONTAINER}_${SOLR_PORT} \
           tellusr/demo:${TELLUSR_VERSION} $TELLUSR_RUN_PARAMS
@@ -171,7 +172,7 @@ function stress_test {
     if [ -n "$STRESS_TEST_COMMAND" ]
     then
         echo "Running stress test"
-        trace docker exec -it tellusr_solr_8983 $STRESS_TEST_COMMAND
+        trace docker exec -d tellusr_solr_8983 $STRESS_TEST_COMMAND
     else
         echo "STRESS_TEST_COMMAND is not defined"
     fi
@@ -272,6 +273,7 @@ function git_pull {
 
 function prod_run {
     SOLR_DATA_VOLUME=${INSTALL_SOLR_DATA_VOLUME:-$SOLR_DATA_VOLUME}
+    TELLUSR_RUN_EXTRA_VOLUMES="-v ${SOLR_DATA_VOLUME}:/var/solr"
     if [ -n "$INSTALL_CENTRAL_URL" ]
     then
         CENTRAL_URL="$INSTALL_CENTRAL_URL"
@@ -493,6 +495,7 @@ do
 	    run
             wait_for_solr
             migrate
+            stress_test
             console
             stop
 	    ;;
@@ -509,7 +512,6 @@ do
             ENV3="env SOLR_PORT_OVERRIDE=$SOLR_PORT3 ZOOKEEPER_ID=3"
             CMD=${BASH_SOURCE[0]}
             stop; $ENV2 $CMD stop; $ENV3 $CMD stop
-            volume_drop; $ENV2 $CMD volume_drop; $ENV3 $CMD volume_drop
             run; $ENV2 $CMD run; $ENV3 $CMD run
             migrate
             console
