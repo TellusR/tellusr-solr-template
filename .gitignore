@@ -44,6 +44,8 @@ Thumbs.db
 *.flv
 *.mov
 *.wmv
+*.swp
+
 
 # Large test data files
 *_data.json
