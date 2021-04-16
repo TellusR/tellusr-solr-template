@@ -180,12 +180,15 @@ function stress_test {
 }
 
 function volume_drop {
-    echo -n "Dropping volume: "
-    $DOCKER volume rm ${SOLR_DATA_VOLUME}
+    if [ "$($DOCKER volume ls -q -f name="${SOLR_DATA_VOLUME}")" ]
+    then
+        echo -n "Dropping volume ${SOLR_DATA_VOLUME}: "
+        $DOCKER volume rm ${SOLR_DATA_VOLUME}
+    fi
 }
 
 function migrate {
-    wait_for_solr
+    wait_for_solr || die "Solr is not up"
     echo -n "Attached to: "
     $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} create_collections.sh
     _migrate_data $SOLR_HOST $PORT
@@ -211,7 +214,7 @@ function console {
 
 
 function stop {
-    CONTAINER=${SOLR_CONTAINER}_${SOLR_PORT}
+    local CONTAINER=${SOLR_CONTAINER}_${SOLR_PORT}
     if [ "$($DOCKER ps -q -f name="${CONTAINER}")" ]; then
         echo -n "Stopping: "
         $DOCKER stop "${CONTAINER}"
@@ -497,7 +500,6 @@ do
 	test)
             assume_configset
 	    run
-            wait_for_solr
             migrate
             console
             stop
