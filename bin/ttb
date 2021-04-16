@@ -159,7 +159,8 @@ function migrate_data_default {
 
 function _migrate_data {
     ## Check if migrate_data function is defined in tellusr.env, and if so run it
-    if [ declare -F "migrate_data" &> /dev/null ]
+    # if [ $(declare -F "migrate_data" &> /dev/null) ]
+    if [ -n "$(LC_ALL=C type -t migrate_data)" ] && [ "$(LC_ALL=C type -t migrate_data)" = function ]
     then
 	migrate_data $1 $2
     else
