@@ -284,7 +284,7 @@ function prod_run {
     then
         CENTRAL_URL="$INSTALL_CENTRAL_URL"
     fi
-    TELLUSR_RUN_MODE_OPTIONS="--restart=always"
+    TELLUSR_RUN_MODE_OPTIONS="--restart=always -d"
     run
 }
 
