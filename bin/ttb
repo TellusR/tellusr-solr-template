@@ -5,8 +5,11 @@ SCRIPT_NAME=`basename "${BASH_SOURCE[0]}"`
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SOLR_CONTAINER=tellusr_solr
 TELLUSR_VERSION=${TELLUSR_VERSION:-"latest"}
-if [[ $- == *x* ]]; then
-  TRACE_MODE=t
+if [[ $- == *x* ]]
+then
+    TRACE_LEVEL=1
+else
+    TRACE_LEVEL=0
 fi
 
 ## Some default project config variables
@@ -51,23 +54,24 @@ else
     LOCALHOST="localhost"
     TELLUSR_RUN_HOST_OPTIONS="--network=host"
 fi
-TELLUSR_RUN_MODE_OPTIONS="--rm"
+TELLUSR_RUN_MODE_OPTIONS="-d --rm"
 
 ## Check if docker command needs to be run as sudo
 
 function trace {
-    if [[ -z TRACE_MODE ]]
+    let TRACE_LEVEL=TRACE_LEVEL+1
+    if [[ $TRACE_LEVEL = "1" ]]
     then
         set -x
-    fi
-    $@
-    if [[ -z TRACE_MODE ]]
-    then
+        $@
         { set +x; } 2> /dev/null
+    else
+        $@
     fi
+    let TRACE_LEVEL=TRACE_LEVEL-1
 }
 
-function assume_docker() {
+function assume_docker {
   # Ask user to install docker if not yet installed
   if [ ! "$(command -v docker)" ]; then
     echo -n "No docker installation was found on this system."
@@ -91,7 +95,7 @@ function assume_docker() {
   DOCKER=$(docker ps &> /dev/null && echo "docker" || echo "sudo docker")
 }
 
-function assume_configset() {
+function assume_configset {
     if [ ! -d $SOLR_CONFIG_DIR ]
     then
         echo "Please create a core with 'bin/ttb create <collection name>'"
@@ -101,9 +105,7 @@ function assume_configset() {
 
 function run {
     let ZOOKEEPER_PORT=SOLR_PORT+1000
-    $DOCKER volume rm tellusr_solr_test_data 2> /dev/null || echo -n
     trace $DOCKER run \
-          -d \
           ${TELLUSR_RUN_HOST_OPTIONS} \
           ${TELLUSR_RUN_MODE_OPTIONS} \
           ${TELLUSR_RUN_OPTIONS} \
@@ -119,7 +121,7 @@ function run {
           --log-driver none \
           --name ${SOLR_CONTAINER}_${SOLR_PORT} \
           tellusr/demo:${TELLUSR_VERSION} $TELLUSR_RUN_PARAMS
-    sleep 1
+    wait_for_solr
 }
 
 
@@ -324,6 +326,11 @@ function die {
 
 
 function install {
+    if [ -n "$($DOCKER volume ls -q -f name="${SOLR_DATA_VOLUME}")" ]
+    then
+        die "Docker volume ${SOLR_DATA_VOLUME} already exists. Please remove it first if you want to reinstall"
+    fi
+    TELLUSR_RUN_EXTRA_VOLUMES="-v ${SOLR_DATA_VOLUME}:/var/solr"
     run
     $DOCKER cp $PROJECT_HOME/zoo.cfg ${SOLR_CONTAINER}_${SOLR_PORT}:/var/solr/data/zoo.cfg
     $DOCKER exec -u 0 -t ${SOLR_CONTAINER}_${SOLR_PORT} chown solr.solr /var/solr/data/zoo.cfg
@@ -354,8 +361,11 @@ do
     case $ARG in
         uninstall)
             SOLR_DATA_VOLUME=${INSTALL_SOLR_DATA_VOLUME:-$SOLR_DATA_VOLUME}
-            stop
-            $DOCKER rm "${SOLR_CONTAINER}_${SOLR_PORT}"
+            if [ ! $($DOCKER volume ls -q -f name="${SOLR_DATA_VOLUME}") ]
+            then
+                die "Docker volume ${SOLR_DATA_VOLUME} does not exist, nothing to uninstall."
+            fi
+            prod_stop
             volume_drop
             ;;
         
@@ -374,6 +384,13 @@ do
             SOLR_DATA_VOLUME=${INSTALL_SOLR_DATA_VOLUME:-$SOLR_DATA_VOLUME}
             install
             rm $PROJECT_HOME/configset/zoo.cfg
+            ;;
+
+        inspect)
+            TELLUSR_RUN_PARAMS=bash
+            TELLUSR_RUN_MODE_OPTIONS="-it --rm"
+            SOLR_DATA_VOLUME=${INSTALL_SOLR_DATA_VOLUME:-$SOLR_DATA_VOLUME}
+            run
             ;;
 
         tellusr_install_prod_mode)
