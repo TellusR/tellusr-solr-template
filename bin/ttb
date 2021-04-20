@@ -313,8 +313,10 @@ function update {
     COLLECTION=$1
     let ZOOKEEPER_PORT=SOLR_PORT+1000
     echo "Updating collection $COLLECTION"
-    trace $DOCKER exec -t "${SOLR_CONTAINER}_${SOLR_PORT}" zkcli.sh -zkhost "localhost:${ZOOKEEPER_PORT}" -cmd upconfig -confname "${COLLECTION}" -confdir "/setup/configset/${COLLECTION}/conf/"
-    trace curl "http://localhost:${SOLR_PORT}/solr/admin/collections?action=RELOAD&name=${COLLECTION}"
+    trace $DOCKER exec -t "${SOLR_CONTAINER}_${SOLR_PORT}" solr zk upconfig -n $COLLECTION -d "/setup/configset/${COLLECTION}/conf/"
+
+    #trace $DOCKER exec -t "${SOLR_CONTAINER}_${SOLR_PORT}" zkcli.sh -zkhost "localhost:${ZOOKEEPER_PORT}" -cmd upconfig -confname "${COLLECTION}" -confdir "/setup/configset/${COLLECTION}/conf/"
+    #trace curl "http://localhost:${SOLR_PORT}/solr/admin/collections?action=RELOAD&name=${COLLECTION}"
 }
 
 function update_all {
