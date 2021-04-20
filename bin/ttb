@@ -274,8 +274,10 @@ function create {
 
 
 function git_pull {
+    pushd $PROJECT_HOME
     GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
     git pull origin $GIT_BRANCH
+    popd
 }
 
 
@@ -348,11 +350,12 @@ function help {
 }
 
 function cloud {
-    if [[ -n "$INSTALL_SERVERS" ]]
+    if [[ -n "$INSTALL_CLOUD_SERVERS" ]]
     then
-        for SERVER in "$INSTALL_CLOUD_SERVERS"
+        for SERVER in ${INSTALL_CLOUD_SERVERS}
         do
-            ssh tellusr@${SERVER} bash -ic ttb $@
+            echo $SERVER
+            trace ssh tellusr@${SERVER} bash -ic ttb $@
         done
     fi
 }
