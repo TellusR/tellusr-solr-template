@@ -359,6 +359,10 @@ function cloud {
             CMD="ZOOKEEPER_ID=$ZOOKEEPER_ID tellusr-solr-template/bin/ttb $@"
             trace ssh -t tellusr@${SERVER} $CMD
         done
+    else
+        echo 'INSTALL_CLOUD_SERVERS is empty. Add servers to'
+        echo 'INSTALL_CLOUD_SERVERS in tellusr.env to run ttb commands'
+        echo 'on all cloud servers with bin/ttb cloud <commands>'
     fi
 }
 
