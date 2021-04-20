@@ -356,8 +356,8 @@ function cloud {
         do
             let ZOOKEEPER_ID=ZOOKEEPER_ID+1
             echo $SERVER
-            CMD="ZOOKEEPER_ID=$ZOOKEEPER_ID ttb $@"
-            trace ssh -t tellusr@${SERVER} bash -ic \"$CMD\"
+            CMD="ZOOKEEPER_ID=$ZOOKEEPER_ID tellusr-solr-template/bin/ttb $@"
+            trace ssh -t tellusr@${SERVER} $CMD
         done
     fi
 }
