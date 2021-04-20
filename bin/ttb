@@ -318,7 +318,7 @@ function update {
 }
 
 function update_all {
-    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} update_collections2.sh
+    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} update_collections.sh
 }
 
 
