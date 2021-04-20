@@ -2,7 +2,7 @@
 
 DEFAULT_TTB_COMMAND=${DEFAULT_TTB_COMMAND:-"help"}
 SCRIPT_NAME=`basename "${BASH_SOURCE[0]}"`
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+SCRIPT_DIR="$( cd "$( dirname "$( readlink "${BASH_SOURCE[0]}" )" )" >/dev/null 2>&1 && pwd )"
 SOLR_CONTAINER=tellusr_solr
 TELLUSR_VERSION=${TELLUSR_VERSION:-"latest"}
 if [[ $- == *x* ]]
@@ -25,6 +25,8 @@ elif [ -f "../../../tellusr.env" ]; then
     PROJECT_PATH="../../.."
 elif [ -f "../../../../tellusr.env" ]; then
     PROJECT_PATH="../../../.."
+elif [ -f "$SCRIPT_DIR/../tellusr.env" ]; then
+    PROJECT_PATH="$SCRIPT_DIR/.."
 fi
 PROJECT_HOME="$( cd "${PROJECT_PATH}" >/dev/null 2>&1 && pwd )"
 
@@ -345,6 +347,16 @@ function help {
     echo "$CMD install|prod_run|uninstall|update|update_all"
 }
 
+function cloud {
+    if [[ -n "$INSTALL_SERVERS" ]]
+    then
+        for SERVER in "$INSTALL_CLOUD_SERVERS"
+        do
+            ssh tellusr@${SERVER} ttb $@
+        done
+    fi
+}
+
 
 # Check that docker is installed
 assume_docker
@@ -502,6 +514,11 @@ do
 	wait_for_solr)
             wait_for_solr
 	    ;;
+
+        cloud)
+            cloud $@
+            exit
+            ;;
 
 	demo)
             volume_drop
