@@ -123,7 +123,6 @@ function run {
           --log-driver none \
           --name ${SOLR_CONTAINER}_${SOLR_PORT} \
           tellusr/demo:${TELLUSR_VERSION} $TELLUSR_RUN_PARAMS
-    wait_for_solr
 }
 
 
@@ -319,7 +318,7 @@ function update {
 }
 
 function update_all {
-    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} update_collections.sh
+    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} update_collections2.sh
 }
 
 
@@ -359,10 +358,6 @@ function cloud {
             CMD="ZOOKEEPER_ID=$ZOOKEEPER_ID tellusr-solr-template/bin/ttb $@"
             trace ssh -t tellusr@${SERVER} $CMD
         done
-    else
-        echo 'INSTALL_CLOUD_SERVERS is empty. Add servers to'
-        echo 'INSTALL_CLOUD_SERVERS in tellusr.env to run ttb commands'
-        echo 'on all cloud servers with bin/ttb cloud <commands>'
     fi
 }
 
@@ -398,8 +393,6 @@ do
                     export ZOOKEEPER_ID="$1" && shift || die "Cloud mode needs a zookeeper id"
                 fi
                 [[ $ZOOKEEPER_ID =~ ^[0-9]+ ]] || die "Zookeeper id '$ZOOKEEPER_ID' should be an integer"
-                echo_zoo_cfg | grep -v 'server.' > $PROJECT_HOME/configset/zoo.cfg
-                echo "server.${ZOOKEEPER_ID}=localhost:2888:3888" >> $PROJECT_HOME/configset/zoo.cfg
             fi
 	    if [ -n "$INSTALL_CENTRAL_URL" ]
 	    then
@@ -407,7 +400,6 @@ do
 	    fi
             SOLR_DATA_VOLUME=${INSTALL_SOLR_DATA_VOLUME:-$SOLR_DATA_VOLUME}
             install
-            rm $PROJECT_HOME/configset/zoo.cfg
             ;;
 
         inspect)
