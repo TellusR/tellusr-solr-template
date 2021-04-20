@@ -352,7 +352,7 @@ function cloud {
     then
         for SERVER in "$INSTALL_CLOUD_SERVERS"
         do
-            ssh tellusr@${SERVER} ttb $@
+            ssh tellusr@${SERVER} bash -ic ttb $@
         done
     fi
 }
