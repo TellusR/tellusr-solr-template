@@ -2,7 +2,7 @@
 
 DEFAULT_TTB_COMMAND=${DEFAULT_TTB_COMMAND:-"help"}
 SCRIPT_NAME=`basename "${BASH_SOURCE[0]}"`
-SCRIPT_DIR="$( cd "$( dirname "$( readlink "${BASH_SOURCE[0]}" )" )" >/dev/null 2>&1 && pwd )"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SOLR_CONTAINER=tellusr_solr
 TELLUSR_VERSION=${TELLUSR_VERSION:-"latest"}
 if [[ $- == *x* ]]
@@ -354,8 +354,10 @@ function cloud {
     then
         for SERVER in ${INSTALL_CLOUD_SERVERS}
         do
+            let ZOOKEEPER_ID=ZOOKEEPER_ID+1
             echo $SERVER
-            trace ssh tellusr@${SERVER} bash -ic ttb $@
+            CMD="ZOOKEEPER_ID=$ZOOKEEPER_ID ttb $@"
+            trace ssh -t tellusr@${SERVER} bash -ic \"$CMD\"
         done
     fi
 }
@@ -387,8 +389,11 @@ do
         install)
             if [[ -e zoo.cfg ]]
             then
-                export ZOOKEEPER_ID="$1" && shift || die "Cloud mode needs a zookeeper id"
-                [[ $ZOOKEEPER_ID =~ ^[0-9]+ ]] || die "Zookeeper id '$ZOOKEEPER_ID' should be and integer"
+                if [[ -z $ZOOKEEER_ID ]]
+                then
+                    export ZOOKEEPER_ID="$1" && shift || die "Cloud mode needs a zookeeper id"
+                fi
+                [[ $ZOOKEEPER_ID =~ ^[0-9]+ ]] || die "Zookeeper id '$ZOOKEEPER_ID' should be an integer"
                 echo_zoo_cfg | grep -v 'server.' > $PROJECT_HOME/configset/zoo.cfg
                 echo "server.${ZOOKEEPER_ID}=localhost:2888:3888" >> $PROJECT_HOME/configset/zoo.cfg
             fi
