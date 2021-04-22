@@ -125,7 +125,7 @@ function run {
           ${TELLUSR_RUN_OPTIONS} \
           -p ${SOLR_PORT}:${SOLR_PORT} \
           -p ${ZOOKEEPER_PORT}:${ZOOKEEPER_PORT} \
-          -e ZOOKEEPER_ID=${ZOOKEEPER_ID:-"1"} \
+          -e ZOOKEEPER_ID="${ZOOKEEPER_ID}" \
           -e SOLR_HEAP=${SOLR_HEAP:-"4096m"} \
           -e TELLUSR_CENTRAL_URL=${CENTRAL_URL:-"http://${LOCALHOST}:${CENTRAL_PORT:-"8989"}"} \
           -e SOLR_DISABLE_SECURITY_JSON="true" \
