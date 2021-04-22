@@ -5,6 +5,15 @@ SCRIPT_NAME=`basename "${BASH_SOURCE[0]}"`
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SOLR_CONTAINER=tellusr_solr
 TELLUSR_VERSION=${TELLUSR_VERSION:-"latest"}
+if [[ ${ZOOKEEPER_ID:-"1"} == "1" ]]
+then
+    # Some commands should only run on the main machine
+    # if you are using the cloud command
+    MAIN_CLIENT="true"
+fi
+
+# Used to avoid switching off tracing if the script is started with
+# or if tracing is nested
 if [[ $- == *x* ]]
 then
     TRACE_LEVEL=1
@@ -58,8 +67,9 @@ else
 fi
 TELLUSR_RUN_MODE_OPTIONS="-d --rm"
 
-## Check if docker command needs to be run as sudo
 
+# Used to turn command tracing on for a single command or function
+# Useful for showing parameters in docker commands
 function trace {
     let TRACE_LEVEL=TRACE_LEVEL+1
     if [[ $TRACE_LEVEL = "1" ]]
@@ -73,6 +83,7 @@ function trace {
     let TRACE_LEVEL=TRACE_LEVEL-1
 }
 
+## Check if docker command needs to be run as sudo
 function assume_docker {
   # Ask user to install docker if not yet installed
   if [ ! "$(command -v docker)" ]; then
@@ -97,6 +108,7 @@ function assume_docker {
   DOCKER=$(docker ps &> /dev/null && echo "docker" || echo "sudo docker")
 }
 
+## Check if a configset is created. Tell user to create one if no
 function assume_configset {
     if [ ! -d $SOLR_CONFIG_DIR ]
     then
@@ -412,34 +424,52 @@ do
             ;;
 
         tellusr_install_prod_mode)
-            curl -s https://dist.tellusr.com/tellusr.sh | bash -s prod_mode
-            curl -s https://dist.tellusr.com/tellusr.sh | bash -s upgrade
+            if [[ -n "$MAIN_CLIENT" ]]
+            then
+                curl -s https://dist.tellusr.com/tellusr.sh | bash -s prod_mode
+                curl -s https://dist.tellusr.com/tellusr.sh | bash -s upgrade
+            fi
             ;;
 
         tellusr_install_test_mode)
-            curl -s https://dist.tellusr.com/tellusr.sh | bash -s test_mode
-            curl -s https://dist.tellusr.com/tellusr.sh | bash -s upgrade
+            if [[ -n "$MAIN_CLIENT" ]]
+            then
+                curl -s https://dist.tellusr.com/tellusr.sh | bash -s test_mode
+                curl -s https://dist.tellusr.com/tellusr.sh | bash -s upgrade
+            fi
             ;;
 
         tellusr)
-            COMMAND="$1" && shift
-            curl -s https://dist.tellusr.com/tellusr.sh | bash -s ${COMMAND:-"help"}
+            if [[ -n "$MAIN_CLIENT" ]]
+            then
+                COMMAND="$1" && shift
+                curl -s https://dist.tellusr.com/tellusr.sh | bash -s ${COMMAND:-"help"}
+            fi
             ;;
 
         create)
-            NEW_COLLECTION="$1" && shift || die "Create needs a new core name"
-            create $NEW_COLLECTION
+            if [[ -n "$MAIN_CLIENT" ]]
+            then
+                NEW_COLLECTION="$1" && shift || die "Create needs a new core name"
+                create $NEW_COLLECTION
+            fi
             ;;
 
         update)
-            assume_configset
-            COLLECTION="$1" && shift || die "Update needs a collection name"
-            update $COLLECTION
+            if [[ -n "$MAIN_CLIENT" ]]
+            then
+                assume_configset
+                COLLECTION="$1" && shift || die "Update needs a collection name"
+                update $COLLECTION
+            fi
             ;;
         
         update_all)
-            assume_configset
-            update_all
+            if [[ -n "$MAIN_CLIENT" ]]
+            then
+                assume_configset
+                update_all
+            fi
             ;;
         
         pull)
@@ -489,12 +519,18 @@ do
 
 	migrate)
             # Create collections and migrate data (if any)
-	    migrate
+            if [[ -n "$MAIN_CLIENT" ]]
+            then
+	        migrate
+            fi
 	    ;;
 
         migrate_data)
             # Only migrate data
-            _migrate_data $SOLR_HOST $PORT
+            if [[ -n "$MAIN_CLIENT" ]]
+            then
+                _migrate_data $SOLR_HOST $PORT
+            fi
             ;;
 
         stress_test)
@@ -504,12 +540,19 @@ do
 
 	demo_migrate)
             # Migrate demo data into collections
-	    demo_migrate
+            # Only migrate data
+            if [[ -n "$MAIN_CLIENT" ]]
+            then
+	        demo_migrate
+            fi
 	    ;;
 
 	console)
             # Enter a bash console for the solr docker container
-	    console
+            if [[ -n "$MAIN_CLIENT" ]]
+            then
+	        console
+            fi
 	    ;;
 
 	volume_drop)
