@@ -54,7 +54,7 @@ SOLR_PORT=${SOLR_PORT_OVERRIDE:-"$SOLR_PORT"}
 
 SOLR_DATA_VOLUME=${SOLR_DATA_VOLUME:-"tellusr_solr_${PROJECT}_data_${SOLR_PORT}"}
 TELLUSR_RUN_PARAMS="-DzkRun"
-TELLUSR_RUN_EXTRA_VOLUMES=""
+TELLUSR_RUN_EXTRA_VOLUMES=${TELLUSR_RUN_EXTRA_VOLUMES:-""}
 
 ## Docker on MacOS does not support --network=host, compensate
 if [[ "$OSTYPE" == "darwin"* ]]
