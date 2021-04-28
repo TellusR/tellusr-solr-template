@@ -440,26 +440,26 @@ do
             ;;
 
         tellusr)
+            COMMAND="$1" && shift
             if [[ -n "$MAIN_CLIENT" ]]
             then
-                COMMAND="$1" && shift
                 curl -s https://dist.tellusr.com/tellusr.sh | bash -s ${COMMAND:-"help"}
             fi
             ;;
 
         create)
+            NEW_COLLECTION="$1" && shift || die "Create needs a new core name"
             if [[ -n "$MAIN_CLIENT" ]]
             then
-                NEW_COLLECTION="$1" && shift || die "Create needs a new core name"
                 create $NEW_COLLECTION
             fi
             ;;
 
         update)
+            COLLECTION="$1" && shift || die "Update needs a collection name"
             if [[ -n "$MAIN_CLIENT" ]]
             then
                 assume_configset
-                COLLECTION="$1" && shift || die "Update needs a collection name"
                 update $COLLECTION
             fi
             ;;
