@@ -53,7 +53,7 @@ source "$PROJECT_HOME/tellusr.env"
 SOLR_PORT=${SOLR_PORT_OVERRIDE:-"$SOLR_PORT"}
 
 SOLR_DATA_VOLUME=${SOLR_DATA_VOLUME:-"tellusr_solr_${PROJECT}_data_${SOLR_PORT}"}
-TELLUSR_RUN_PARAMS="-DzkRun"
+TELLUSR_RUN_PARAMS=${TELLUSR_RUN_PARAMS:-' -c'}
 TELLUSR_RUN_EXTRA_VOLUMES=${TELLUSR_RUN_EXTRA_VOLUMES:-""}
 
 ## Docker on MacOS does not support --network=host, compensate
@@ -75,7 +75,7 @@ function trace {
     if [[ $TRACE_LEVEL = "1" ]]
     then
         set -x
-        $@
+        $@ 
         { set +x; } 2> /dev/null
     else
         $@
@@ -118,7 +118,11 @@ function assume_configset {
 }
 
 function run {
-    let ZOOKEEPER_PORT=SOLR_PORT+1000
+    if [[ -z "$ZOOKEEPER_PORT" ]]
+    then
+        let ZOOKEEPER_PORT=SOLR_PORT+1000
+    fi
+
     trace $DOCKER run \
           ${TELLUSR_RUN_HOST_OPTIONS} \
           ${TELLUSR_RUN_MODE_OPTIONS} \
@@ -130,11 +134,60 @@ function run {
           -e TELLUSR_CENTRAL_URL=${CENTRAL_URL:-"http://${LOCALHOST}:${CENTRAL_PORT:-"8989"}"} \
           -e SOLR_DISABLE_SECURITY_JSON="true" \
           -e SOLR_PORT=$SOLR_PORT \
+          -e ZOOKEEPER_PORT=2181 \
+          ${TELLUSR_RUN_EXTRA_ENV} \
           -v $BUILD_ROOT/configset:/setup/configset \
           ${TELLUSR_RUN_EXTRA_VOLUMES} \
           --log-driver none \
           --name ${SOLR_CONTAINER}_${SOLR_PORT} \
           tellusr/demo:${TELLUSR_VERSION} $TELLUSR_RUN_PARAMS
+}
+
+
+function zookeeper_run {
+    if [[ -n "$ZOOKEEPER_ID" ]]
+    then
+        $DOCKER run \
+           ${TELLUSR_RUN_HOST_OPTIONS} \
+           ${TELLUSR_RUN_MODE_OPTIONS} \
+           -e ZOO_4LW_COMMANDS_WHITELIST=mntr,conf,ruok \
+           -e ZOO_LOG4J_PROP="INFO,ROLLINGFILE" \
+           -e ZOO_MY_ID="${ZOOKEEPER_ID:-"1"}" \
+           -e ZOO_SERVERS="${ZOO_SERVERS}" \
+           --name "tellusr_zookeeper_${ZOOKEEPER_PORT}" \
+           zookeeper
+    else
+        $DOCKER run \
+           ${TELLUSR_RUN_HOST_OPTIONS} \
+           ${TELLUSR_RUN_MODE_OPTIONS} \
+           -e ZOO_4LW_COMMANDS_WHITELIST=mntr,conf,ruok \
+           -e ZOO_LOG4J_PROP="INFO,ROLLINGFILE" \
+           $ZOO_EXTRA_ENV \
+           --name "tellusr_zookeeper_${ZOOKEEPER_PORT}" \
+           zookeeper
+    fi  
+}
+
+
+function prod_zookeeper_run {
+    TELLUSR_RUN_MODE_OPTIONS="--restart=always -d"
+    ZOO_SERVERS=${INSTALL_ZOO_SERVERS:-("localhost:2888:3888")}
+    trace zookeeper_run
+}
+
+
+function zookeeper_stop {
+    CONTAINER="tellusr_zookeeper_${ZOOKEEPER_PORT}"
+    if [ "$($DOCKER ps -q -f name="${CONTAINER}")" ]
+    then
+        echo -n "Stopping: "
+        trace $DOCKER stop "${CONTAINER}"
+    fi
+    if [ "$($DOCKER ps -q -a -f name="${CONTAINER}")" ]
+    then
+        echo -n "Removing: "
+        trace $DOCKER rm "${CONTAINER}"
+    fi
 }
 
 
@@ -258,12 +311,12 @@ initLimit=100
 # sending a request and getting an acknowledgement
 syncLimit=5
 dataDir=/var/solr/data/zoo_data
-# clientPort=2181
+clientPort=2181
 
 # admin.enableServer=false
-server.1=localhost:2888:3888
-server.2=localhost:2889:3889
-server.3=localhost:2890:3890
+server.1=localhost:2888:3888;2181
+# server.2=localhost:2889:3889
+# server.3=localhost:2890:3890
 EOSCRIPT
 }
 
@@ -295,6 +348,8 @@ function git_pull {
 function prod_run {
     SOLR_DATA_VOLUME=${INSTALL_SOLR_DATA_VOLUME:-$SOLR_DATA_VOLUME}
     TELLUSR_RUN_EXTRA_VOLUMES="-v ${SOLR_DATA_VOLUME}:/var/solr"
+    TELLUSR_RUN_PARAMS="-c -z ${INSTALL_ZK_HOST}"
+    
     if [ -n "$INSTALL_CENTRAL_URL" ]
     then
         CENTRAL_URL="$INSTALL_CENTRAL_URL"
@@ -304,17 +359,21 @@ function prod_run {
 }
 
 
+
 function prod_stop {
     CONTAINER=${SOLR_CONTAINER}_${SOLR_PORT}
-    if [ "$($DOCKER ps -q -f name="${CONTAINER}")" ]; then
+    if [ "$($DOCKER ps -q -f name="${CONTAINER}")" ]
+    then
         echo -n "Stopping: "
         $DOCKER stop "${CONTAINER}"
     fi
-    if [ "$($DOCKER ps -q -a -f name="${CONTAINER}")" ]; then
+    if [ "$($DOCKER ps -q -a -f name="${CONTAINER}")" ]
+    then
         echo -n "Removing: "
         $DOCKER rm "${CONTAINER}"
     fi
 }
+
 
 function docker_pull {
     $DOCKER pull tellusr/demo:$TELLUSR_VERSION
@@ -323,16 +382,21 @@ function docker_pull {
 
 function update {
     COLLECTION=$1
-    let ZOOKEEPER_PORT=SOLR_PORT+1000
-    echo "Updating collection $COLLECTION"
-    trace $DOCKER exec -t "${SOLR_CONTAINER}_${SOLR_PORT}" solr zk upconfig -n $COLLECTION -d "/setup/configset/${COLLECTION}/conf/"
+    if [[ -z "$ZOOKEEPER_PORT" ]]
+    then
+        let ZOOKEEPER_PORT=SOLR_PORT+1000
+    fi
 
-    #trace $DOCKER exec -t "${SOLR_CONTAINER}_${SOLR_PORT}" zkcli.sh -zkhost "localhost:${ZOOKEEPER_PORT}" -cmd upconfig -confname "${COLLECTION}" -confdir "/setup/configset/${COLLECTION}/conf/"
-    #trace curl "http://localhost:${SOLR_PORT}/solr/admin/collections?action=RELOAD&name=${COLLECTION}"
+    echo "Updating collection $COLLECTION"
+    # trace $DOCKER exec -t "${SOLR_CONTAINER}_${SOLR_PORT}" solr zk upconfig  -z localhost:2181 -n $COLLECTION -d "/setup/configset/${COLLECTION}/conf/"
+
+    trace $DOCKER exec -t "${SOLR_CONTAINER}_${SOLR_PORT}" zkcli.sh -zkhost "localhost:${ZOOKEEPER_PORT}" -cmd upconfig -confname "${COLLECTION}" -confdir "/setup/configset/${COLLECTION}/conf/"
+    trace curl "http://localhost:${SOLR_PORT}/solr/admin/collections?action=RELOAD&name=${COLLECTION}"
 }
 
+
 function update_all {
-    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} update_collections.sh
+    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} update_collections_full.sh
 }
 
 
@@ -588,23 +652,48 @@ do
             stop
 	    ;;
 
+        zookeeper_run)
+            zookeeper_run
+            ;;
+
+        zookeeper_stop)
+            zookeeper_stop
+            ;;
+
+        prod_zookeeper_run)
+            prod_zookeeper_run
+            ;;
+
+        prod_zookeeper_stop)
+            zookeeper_stop
+            ;;
+
 	test_cloud)
             assume_configset
             echo "Project: $PROJECT"
             mkdir -p configset
-            echo_zoo_cfg > $PROJECT_HOME/configset/zoo.cfg
-            export TELLUSR_RUN_PARAMS="-DzkRun"
+            # echo_zoo_cfg > $PROJECT_HOME/configset/zoo.cfg
+
+            export TELLUSR_RUN_PARAMS="-c -z localhost:2181"
             let SOLR_PORT2=SOLR_PORT+1
             let SOLR_PORT3=SOLR_PORT+2
-            ENV2="env SOLR_PORT_OVERRIDE=$SOLR_PORT2 ZOOKEEPER_ID=2"
-            ENV3="env SOLR_PORT_OVERRIDE=$SOLR_PORT3 ZOOKEEPER_ID=3"
+            ZOO_SERVERS="localhost:2888:3888"
+            ENV2="env SOLR_PORT_OVERRIDE=$SOLR_PORT2 ZOOKEEPER_ID=2 ZOOKEEPER_PORT=2181"
+            ENV3="env SOLR_PORT_OVERRIDE=$SOLR_PORT3 ZOOKEEPER_ID=3 ZOOKEEPER_PORT=2181"
+            
             CMD=${BASH_SOURCE[0]}
             stop; $ENV2 $CMD stop; $ENV3 $CMD stop
+            zookeeper_stop
+
+            trace zookeeper_run
             run; $ENV2 $CMD run; $ENV3 $CMD run
+
             migrate
             console
             stop; $ENV2 $CMD stop; $ENV3 $CMD stop
-            rm $PROJECT_HOME/configset/zoo.cfg
+            zookeeper_stop
+            
+            # rm $PROJECT_HOME/configset/zoo.cfg
 	    ;;
 
         help)
