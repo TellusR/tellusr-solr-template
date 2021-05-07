@@ -154,6 +154,7 @@ function zookeeper_run {
            -e ZOO_LOG4J_PROP="INFO,ROLLINGFILE" \
            -e ZOO_MY_ID="${ZOOKEEPER_ID:-"1"}" \
            -e ZOO_SERVERS="${ZOO_SERVERS}" \
+           $ZOO_VOLUMES \
            --name "tellusr_zookeeper_${ZOOKEEPER_PORT}" \
            zookeeper
     else
@@ -162,7 +163,7 @@ function zookeeper_run {
            ${TELLUSR_RUN_MODE_OPTIONS} \
            -e ZOO_4LW_COMMANDS_WHITELIST=mntr,conf,ruok \
            -e ZOO_LOG4J_PROP="INFO,ROLLINGFILE" \
-           $ZOO_EXTRA_ENV \
+           $ZOO_VOLUMES \
            --name "tellusr_zookeeper_${ZOOKEEPER_PORT}" \
            zookeeper
     fi  
@@ -172,6 +173,7 @@ function zookeeper_run {
 function prod_zookeeper_run {
     TELLUSR_RUN_MODE_OPTIONS="--restart=always -d"
     ZOO_SERVERS=${INSTALL_ZOO_SERVERS:-("localhost:2888:3888")}
+    ZOO_VOLUMES="-v zookeeper_${ZOOKEEPER_PORT}_data:/data -v zookeeper_${ZOOKEEPER_PORT}_datalog:/datalog -v zookeeper_${ZOOKEEPER_PORT}_logs:/logs"
     trace zookeeper_run
 }
 
@@ -423,7 +425,8 @@ function help {
     echo "$CMD volume_drop run migrate pull update demo_migrate console stop"
     echo "$CMD test|test_cloud|demo"
     echo "$CMD tellusr_install_test_mode|tellusr_install_prod_mode|tellusr"
-    echo "$CMD install|prod_run|uninstall|update|update_all"
+    echo "$CMD install|uninstall|prod_run|prod_stop|prod_zookeeper_run|prod_zookeeper_stop"
+    echo "$CMD update|update_all"
 }
 
 function cloud {
