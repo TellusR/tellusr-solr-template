@@ -244,6 +244,12 @@ function stress_test {
     then
         echo "Running stress test"
         trace docker exec -d tellusr_solr_8983 $STRESS_TEST_COMMAND
+    elif [ -n "$STRESS_TEST_COMMANDS" ]
+    then
+         for COMMAND in "${STRESS_TEST_COMMANDS[@]}"
+         do
+             trace docker exec -d tellusr_solr_8983 "$COMMAND"
+         done
     else
         echo "STRESS_TEST_COMMAND is not defined"
     fi
