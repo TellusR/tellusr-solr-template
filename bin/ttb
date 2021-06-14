@@ -512,6 +512,13 @@ do
             fi
             ;;
 
+        tellusr_install)
+            if [[ -n "$MAIN_CLIENT" ]]
+            then
+                curl -s https://dist.tellusr.com/install.sh | bash
+            fi
+            ;;
+
         tellusr)
             COMMAND="$1" && shift
             if [[ -n "$MAIN_CLIENT" ]]
