@@ -21,6 +21,12 @@ else
     TRACE_LEVEL=0
 fi
 
+if [[ -w "/var/log/tellusr" ]]; then
+    TELLUSR_LOG_VOLUME="-v /var/log/tellusr/solr:/var/solr/logs"
+fi
+TELLUSR_LOG_VOLUME=""
+
+
 ## Some default project config variables
 PROJECT=default
 PROJECT_PATH=.
@@ -136,6 +142,7 @@ function run {
           -e SOLR_PORT=$SOLR_PORT \
           -e ZOOKEEPER_PORT=2181 \
           ${TELLUSR_RUN_EXTRA_ENV} \
+          ${TELLUSR_LOG_VOLUME} \
           -v $BUILD_ROOT/configset:/setup/configset \
           ${TELLUSR_RUN_EXTRA_VOLUMES} \
           --log-driver none \
