@@ -24,7 +24,6 @@ fi
 if [[ -w "/var/log/tellusr/solr" ]]; then
     TELLUSR_LOG_VOLUME="-v /var/log/tellusr/solr:/var/solr/logs"
 fi
-TELLUSR_LOG_VOLUME=""
 
 
 ## Some default project config variables
