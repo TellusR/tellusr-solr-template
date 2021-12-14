@@ -341,7 +341,7 @@ function create {
     mkdir -p $BUILD_ROOT/configset
     run
     mkdir -p $BUILD_ROOT/configset/$NEW_COLLECTION/
-    trace $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} solr create_core -c $NEW_COLLECTION
+    trace $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} solr create_core -p ${SOLR_PORT} -c $NEW_COLLECTION
     trace $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} /opt/tellusr/bin/append_snippet.sh $NEW_COLLECTION
     trace $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} cp /opt/tellusr/resources/elevate.xml /var/solr/data/$NEW_COLLECTION/conf
     trace $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} cp /opt/tellusr/resources/synonyms.txt /var/solr/data/$NEW_COLLECTION/conf
