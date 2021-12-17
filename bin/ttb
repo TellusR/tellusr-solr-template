@@ -13,6 +13,7 @@ then
     MAIN_CLIENT="true"
 fi
 
+
 # Used to avoid switching off tracing if the script is started with
 # or if tracing is nested
 if [[ $- == *x* ]]
