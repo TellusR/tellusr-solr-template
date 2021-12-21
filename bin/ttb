@@ -6,7 +6,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SOLR_CONTAINER=tellusr_solr
 TELLUSR_VERSION=${TELLUSR_VERSION:-"latest"}
 if [[ ${ZOOKEEPER_ID:-"1"} == "1" ]]
-RED="\e[31m"
 then
     # Some commands should only run on the main machine
     # if you are using the cloud command
@@ -470,6 +469,7 @@ function check_port {
 }
 
 function print_error() {
+    local RED="\e[31m"
     printf "${RED}$1\n";
 }
 
