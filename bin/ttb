@@ -678,7 +678,7 @@ do
             volume_drop
             # Do not run demo in cloud mode
             TELLUSR_RUN_PARAMS=""
-        check_port
+	    check_port
 	    run
             # Create and populate tellusr-demo core
             demo_create_core
