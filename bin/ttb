@@ -147,7 +147,7 @@ function run {
           ${TELLUSR_RUN_EXTRA_VOLUMES} \
           --log-driver none \
           --name ${SOLR_CONTAINER}_${SOLR_PORT} \
-          tellusr/demo:${TELLUSR_VERSION} $TELLUSR_RUN_PARAMS
+          tellusr/search:${TELLUSR_VERSION} $TELLUSR_RUN_PARAMS
 }
 
 
@@ -395,7 +395,7 @@ function prod_stop {
 
 
 function docker_pull {
-    $DOCKER pull tellusr/demo:$TELLUSR_VERSION
+    $DOCKER pull tellusr/search:$TELLUSR_VERSION
 }
 
 
