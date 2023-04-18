@@ -3,7 +3,7 @@
 DEFAULT_TTB_COMMAND=${DEFAULT_TTB_COMMAND:-"help"}
 SCRIPT_NAME=`basename "${BASH_SOURCE[0]}"`
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-SOLR_CONTAINER=tellusr_solr
+SOLR_CONTAINER=tellusr-solr
 TELLUSR_VERSION=${TELLUSR_VERSION:-"latest"}
 if [[ ${ZOOKEEPER_ID:-"1"} == "1" ]]
 then
@@ -128,6 +128,7 @@ function run {
     then
         let ZOOKEEPER_PORT=SOLR_PORT+1000
     fi
+    TELLUSR_RUN_EXTRA_VOLUMES="-v ${SOLR_DATA_VOLUME:-"tellusr_solr_data"}:/var/solr"
 
     trace $DOCKER run \
           ${TELLUSR_RUN_HOST_OPTIONS} \
@@ -143,11 +144,15 @@ function run {
           -e ZOOKEEPER_PORT=2181 \
           ${TELLUSR_RUN_EXTRA_ENV} \
           ${TELLUSR_LOG_VOLUME} \
-          -v $BUILD_ROOT/configset:/setup/configset \
+          -v tellusr_solr_setup:/setup \
           ${TELLUSR_RUN_EXTRA_VOLUMES} \
-          --log-driver none \
-          --name ${SOLR_CONTAINER}_${SOLR_PORT} \
-          tellusr/search:${TELLUSR_VERSION} $TELLUSR_RUN_PARAMS
+          --name ${SOLR_CONTAINER}-${SOLR_PORT} \
+          tellusr/search:${TELLUSR_VERSION} solr-foreground -a --add-modules=jdk.incubator.vector $TELLUSR_RUN_PARAMS
+}
+
+
+function semantic_init {
+    docker exec ${SOLR_CONTAINER}-${SOLR_PORT} semantic_resources.sh
 }
 
 
@@ -250,12 +255,12 @@ function stress_test {
     if [ -n "$STRESS_TEST_COMMAND" ]
     then
         echo "Running stress test"
-        trace docker exec -d tellusr_solr_8983 $STRESS_TEST_COMMAND
+        trace docker exec -d ${SOLR_CONTAINER}-${SOLR_PORT} $STRESS_TEST_COMMAND
     elif [ -n "$STRESS_TEST_COMMANDS" ]
     then
          for COMMAND in "${STRESS_TEST_COMMANDS[@]}"
          do
-             trace docker exec -d tellusr_solr_8983 "$COMMAND"
+             trace docker exec -d ${SOLR_CONTAINER}-${SOLR_PORT} "$COMMAND"
          done
     else
         echo "STRESS_TEST_COMMAND is not defined"
@@ -273,11 +278,12 @@ function volume_drop {
 function migrate {
     wait_for_solr || die "Solr is not up"
 
-
     echo -n "Attached to: "
-    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} pgrep -f zkRun > /dev/null && \
-        $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} create_collections.sh || \
-        $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} create_cores.sh
+    # $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} pgrep -f zkRun > /dev/null && \
+    $DOCKER cp ${SOLR_CONFIG_DIR} ${SOLR_CONTAINER}-${SOLR_PORT}:/setup/
+    $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} env | grep ZOOKEEPER_PORT > /dev/null && \
+        $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} create_collections.sh || \
+        $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} create_cores.sh
     _migrate_data $SOLR_HOST $PORT
 }
 
@@ -285,23 +291,23 @@ function migrate {
 function demo_create_core {
     wait_for_solr
     echo -n "Attached to: "
-    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} demo_create_core.sh
+    $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} demo_create_core.sh
 }
 
 
 function demo_migrate {
     wait_for_solr
     echo -n "Attached to: "
-    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} demo_migrate.sh
+    $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} demo_migrate.sh
 }
 
 function console {
-    $DOCKER exec -it ${SOLR_CONTAINER}_${SOLR_PORT} bash
+    $DOCKER exec -it ${SOLR_CONTAINER}-${SOLR_PORT} bash
 }
 
 
 function stop {
-    local CONTAINER=${SOLR_CONTAINER}_${SOLR_PORT}
+    local CONTAINER=${SOLR_CONTAINER}-${SOLR_PORT}
     if [ "$($DOCKER ps -q -f name="${CONTAINER}")" ]; then
         echo -n "Stopping: "
         $DOCKER stop "${CONTAINER}"
@@ -309,12 +315,12 @@ function stop {
 }
 
 function wait_for_solr {
-    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} wait-for-solr.sh
+    $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} wait-for-solr.sh
 }
 
 
 function wait_for_zookeeper {
-    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} wait-for-zookeeper.sh
+    $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} wait-for-zookeeper.sh
 }
 
 
@@ -346,11 +352,11 @@ function create {
     mkdir -p $BUILD_ROOT/configset
     run
     mkdir -p $BUILD_ROOT/configset/$NEW_COLLECTION/
-    trace $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} solr create_core -p ${SOLR_PORT} -c $NEW_COLLECTION
-    trace $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} /opt/tellusr/bin/append_snippet.sh $NEW_COLLECTION
-    trace $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} cp /opt/tellusr/resources/elevate.xml /var/solr/data/$NEW_COLLECTION/conf
-    trace $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} cp /opt/tellusr/resources/synonyms.txt /var/solr/data/$NEW_COLLECTION/conf
-    trace $DOCKER cp ${SOLR_CONTAINER}_${SOLR_PORT}:/var/solr/data/$NEW_COLLECTION/conf $BUILD_ROOT/configset/$NEW_COLLECTION/conf
+    trace $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} solr create_core -p ${SOLR_PORT} -c $NEW_COLLECTION
+    trace $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} /opt/tellusr/bin/append_snippet.sh $NEW_COLLECTION
+    trace $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} cp /opt/tellusr/resources/elevate.xml /var/solr/data/$NEW_COLLECTION/conf
+    trace $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} cp /opt/tellusr/resources/synonyms.txt /var/solr/data/$NEW_COLLECTION/conf
+    trace $DOCKER cp ${SOLR_CONTAINER}-${SOLR_PORT}:/var/solr/data/$NEW_COLLECTION/conf $BUILD_ROOT/configset/$NEW_COLLECTION/conf
     stop
     volume_drop
 }
@@ -380,7 +386,7 @@ function prod_run {
 
 
 function prod_stop {
-    CONTAINER=${SOLR_CONTAINER}_${SOLR_PORT}
+    CONTAINER=${SOLR_CONTAINER}-${SOLR_PORT}
     if [ "$($DOCKER ps -q -f name="${CONTAINER}")" ]
     then
         echo -n "Stopping: "
@@ -407,15 +413,15 @@ function update {
     fi
 
     echo "Updating collection $COLLECTION"
-    # trace $DOCKER exec -t "${SOLR_CONTAINER}_${SOLR_PORT}" solr zk upconfig  -z localhost:2181 -n $COLLECTION -d "/setup/configset/${COLLECTION}/conf/"
+    # trace $DOCKER exec -t "${SOLR_CONTAINER}-${SOLR_PORT}" solr zk upconfig  -z localhost:2181 -n $COLLECTION -d "/setup/configset/${COLLECTION}/conf/"
 
-    trace $DOCKER exec -t "${SOLR_CONTAINER}_${SOLR_PORT}" zkcli.sh -zkhost "localhost:${ZOOKEEPER_PORT}" -cmd upconfig -confname "${COLLECTION}" -confdir "/setup/configset/${COLLECTION}/conf/"
+    trace $DOCKER exec -t "${SOLR_CONTAINER}-${SOLR_PORT}" zkcli.sh -zkhost "localhost:${ZOOKEEPER_PORT}" -cmd upconfig -confname "${COLLECTION}" -confdir "/setup/configset/${COLLECTION}/conf/"
     trace curl "http://localhost:${SOLR_PORT}/solr/admin/collections?action=RELOAD&name=${COLLECTION}"
 }
 
 
 function update_all {
-    $DOCKER exec -t ${SOLR_CONTAINER}_${SOLR_PORT} update_collections_full.sh
+    $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} update_collections_full.sh
 }
 
 
@@ -432,8 +438,8 @@ function install {
     fi
     TELLUSR_RUN_EXTRA_VOLUMES="-v ${SOLR_DATA_VOLUME}:/var/solr"
     run
-    $DOCKER cp $PROJECT_HOME/zoo.cfg ${SOLR_CONTAINER}_${SOLR_PORT}:/var/solr/data/zoo.cfg
-    $DOCKER exec -u 0 -t ${SOLR_CONTAINER}_${SOLR_PORT} chown solr.solr /var/solr/data/zoo.cfg
+    $DOCKER cp $PROJECT_HOME/zoo.cfg ${SOLR_CONTAINER}-${SOLR_PORT}:/var/solr/data/zoo.cfg
+    $DOCKER exec -u 0 -t ${SOLR_CONTAINER}-${SOLR_PORT} chown solr.solr /var/solr/data/zoo.cfg
     stop
 }
 
@@ -521,6 +527,12 @@ do
             run
             ;;
 
+	run_fg)
+            TELLUSR_RUN_MODE_OPTIONS="-t --rm"
+            run
+            ;;
+	    
+
         tellusr_install_prod_mode)
             if [[ -n "$MAIN_CLIENT" ]]
             then
@@ -536,6 +548,19 @@ do
                 curl -s https://dist.tellusr.com/tellusr.sh | bash -s upgrade
             fi
             ;;
+
+        tellusr_migrate_schema)
+            # Output an error if no configset exists
+            assume_configset
+            # Start the docker container with solr
+            TELLUSR_RUN_EXTRA_VOLUMES="-v tellusr_tellusr_solr:/var/solr"
+            run
+            # Migrate schema
+            migrate
+            stop
+            ;;
+
+        
 
         tellusr_install)
             if [[ -n "$MAIN_CLIENT" ]]
@@ -589,6 +614,7 @@ do
         docker_pull)
             docker_pull
             ;;
+
         
 	run)
             # Output an error if no configset exists
@@ -660,6 +686,10 @@ do
             fi
 	    ;;
 
+        semantic_init)
+            semantic_init
+            ;;
+
 	volume_drop)
             # Drop volume with solr data
 	    volume_drop
@@ -678,7 +708,7 @@ do
             volume_drop
             # Do not run demo in cloud mode
             TELLUSR_RUN_PARAMS=""
-	    check_port
+            check_port
 	    run
             # Create and populate tellusr-demo core
             demo_create_core
