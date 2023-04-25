@@ -258,10 +258,10 @@ function stress_test {
         trace docker exec -d ${SOLR_CONTAINER}-${SOLR_PORT} $STRESS_TEST_COMMAND
     elif [ -n "$STRESS_TEST_COMMANDS" ]
     then
-         for COMMAND in "${STRESS_TEST_COMMANDS[@]}"
-         do
-             trace docker exec -d ${SOLR_CONTAINER}-${SOLR_PORT} "$COMMAND"
-         done
+        for COMMAND in "${STRESS_TEST_COMMANDS[@]}"
+        do
+            trace docker exec -d ${SOLR_CONTAINER}-${SOLR_PORT} "$COMMAND"
+        done
     else
         echo "STRESS_TEST_COMMAND is not defined"
     fi
@@ -353,9 +353,6 @@ function create {
     run
     mkdir -p $BUILD_ROOT/configset/$NEW_COLLECTION/
     trace $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} solr create_core -p ${SOLR_PORT} -c $NEW_COLLECTION
-    trace $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} /opt/tellusr/bin/append_snippet.sh $NEW_COLLECTION
-    trace $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} cp /opt/tellusr/resources/elevate.xml /var/solr/data/$NEW_COLLECTION/conf
-    trace $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} cp /opt/tellusr/resources/synonyms.txt /var/solr/data/$NEW_COLLECTION/conf
     trace $DOCKER cp ${SOLR_CONTAINER}-${SOLR_PORT}:/var/solr/data/$NEW_COLLECTION/conf $BUILD_ROOT/configset/$NEW_COLLECTION/conf
     stop
     volume_drop
@@ -709,20 +706,20 @@ do
             # Do not run demo in cloud mode
             TELLUSR_RUN_PARAMS=""
             check_port
-	    run
+            run
             # Create and populate tellusr-demo core
             demo_create_core
             console
             stop
-	    ;;
+    ;;
 
-	test)
+        test)
             assume_configset
-	    run
+            run
             migrate
             console
             stop
-	    ;;
+            ;;
 
         zookeeper_run)
             zookeeper_run
@@ -740,7 +737,7 @@ do
             zookeeper_stop
             ;;
 
-	test_cloud)
+        test_cloud)
             assume_configset
             echo "Project: $PROJECT"
             mkdir -p configset
@@ -766,7 +763,7 @@ do
             zookeeper_stop
             
             # rm $PROJECT_HOME/configset/zoo.cfg
-	    ;;
+            ;;
 
         help)
             help
