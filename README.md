@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This is a Solr template for new projects that wants to use [TellusR](https://tellusr.com/). It uses the the [tellusr/search](https://hub.docker.com/repository/docker/tellusr/search) docker image. This is built on top of the official [Solr](https://hub.docker.com/repository/docker/tellusr/search) docker image but with TellusR configuration and extensions prepackaged. It includes a script that will help you get started quickly.
+This is a Solr template for new projects that wants to use [TellusR](https://tellusr.com/). It uses the the [tellusr/search](https://hub.docker.com/r/tellusr/search) docker image. This is built on top of the official [Solr](https://hub.docker.com/_/solr) docker image but with TellusR configuration and extensions prepackaged. It includes a script that will help you get started quickly.
 
 TellusR consists of three main components. A control dashboard (tellusr/central), a natural language service (tellusr/nlp) and integration plugin for Solr (tellusr-integrator-*.jar). Together they add advanced features and usability to Solr, which you can read about at the [TellusR](https://tellusr.com/) site. Developer documentation is available at the [Documentation site](https://docs.tellusr.com/).
 
