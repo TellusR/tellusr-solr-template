@@ -350,12 +350,15 @@ function create {
     NEW_COLLECTION=$1
     TELLUSR_RUN_PARAMS=""
     mkdir -p $BUILD_ROOT/configset
-    run
+    trace $DOCKER run --rm -d \
+          -e SOLR_DISABLE_SECURITY_JSON="true" \
+          --name ${SOLR_CONTAINER}-create \
+          tellusr/search:${TELLUSR_VERSION} solr-foreground -a --add-modules=jdk.incubator.vector
+    
     mkdir -p $BUILD_ROOT/configset/$NEW_COLLECTION/
-    trace $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} solr create_core -p ${SOLR_PORT} -c $NEW_COLLECTION
-    trace $DOCKER cp ${SOLR_CONTAINER}-${SOLR_PORT}:/var/solr/data/$NEW_COLLECTION/conf $BUILD_ROOT/configset/$NEW_COLLECTION/conf
-    stop
-    volume_drop
+    trace $DOCKER exec -t ${SOLR_CONTAINER}-create solr create_core -c $NEW_COLLECTION    
+    trace $DOCKER cp ${SOLR_CONTAINER}-create:/var/solr/data/$NEW_COLLECTION/conf $BUILD_ROOT/configset/$NEW_COLLECTION/conf
+    trace $DOCKER stop ${SOLR_CONTAINER}-create
 }
 
 
