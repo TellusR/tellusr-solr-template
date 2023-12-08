@@ -144,9 +144,10 @@ function run {
           -e ZOOKEEPER_PORT=2181 \
           ${TELLUSR_RUN_EXTRA_ENV} \
           ${TELLUSR_LOG_VOLUME} \
-          -v tellusr_solr_setup:/setup \
+          -v tellusr_solr_setup_${PROJECT}:/setup/resources \
           ${TELLUSR_RUN_EXTRA_VOLUMES} \
           --name ${SOLR_CONTAINER}-${SOLR_PORT} \
+	  --stop-timeout=25 \
           tellusr/search:${TELLUSR_VERSION} solr-foreground -a --add-modules=jdk.incubator.vector $TELLUSR_RUN_PARAMS
 }
 
@@ -234,7 +235,7 @@ function migrate_data_default {
         else
             continue
         fi
-        curl -X POST -H 'Content-Type: application/json' "http://${SERVER}/solr/$CORE/update?commit=true" --data-binary @$FILE
+        curl -X POST -H 'Content-Type: application/json' "http://${SERVER}/solr/$CORE/update?commit=true" -T $FILE
     done
     popd
 }
@@ -281,7 +282,7 @@ function migrate {
     echo -n "Attached to: "
     # $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} pgrep -f zkRun > /dev/null && \
     $DOCKER cp ${SOLR_CONFIG_DIR} ${SOLR_CONTAINER}-${SOLR_PORT}:/setup/
-    $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} env | grep ZOOKEEPER_PORT > /dev/null && \
+    $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} env | egrep 'ZOOKEEPER_PORT|ZK_HOST' > /dev/null && \
         $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} create_collections.sh || \
         $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} create_cores.sh
     _migrate_data $SOLR_HOST $PORT
@@ -349,7 +350,6 @@ EOSCRIPT
 function create {
     NEW_COLLECTION=$1
     TELLUSR_RUN_PARAMS=""
-    mkdir -p $BUILD_ROOT/configset
     trace $DOCKER run --rm -d \
           -e SOLR_DISABLE_SECURITY_JSON="true" \
           --name ${SOLR_CONTAINER}-create \
@@ -415,12 +415,15 @@ function update {
     echo "Updating collection $COLLECTION"
     # trace $DOCKER exec -t "${SOLR_CONTAINER}-${SOLR_PORT}" solr zk upconfig  -z localhost:2181 -n $COLLECTION -d "/setup/configset/${COLLECTION}/conf/"
 
+    $DOCKER cp ${SOLR_CONFIG_DIR} ${SOLR_CONTAINER}-${SOLR_PORT}:/setup/
     trace $DOCKER exec -t "${SOLR_CONTAINER}-${SOLR_PORT}" zkcli.sh -zkhost "localhost:${ZOOKEEPER_PORT}" -cmd upconfig -confname "${COLLECTION}" -confdir "/setup/configset/${COLLECTION}/conf/"
     trace curl "http://localhost:${SOLR_PORT}/solr/admin/collections?action=RELOAD&name=${COLLECTION}"
 }
 
 
 function update_all {
+    $DOCKER exec -u0 -t ${SOLR_CONTAINER}-${SOLR_PORT} rm -rf /setup/configset
+    $DOCKER cp ${SOLR_CONFIG_DIR} ${SOLR_CONTAINER}-${SOLR_PORT}:/setup/
     $DOCKER exec -t ${SOLR_CONTAINER}-${SOLR_PORT} update_collections_full.sh
 }
 
@@ -695,6 +698,10 @@ do
 	    volume_drop
 	    ;;
 
+	sleep)
+	    sleep 1
+	    ;;
+
 	wait_for_solr)
             wait_for_solr
 	    ;;
@@ -714,7 +721,7 @@ do
             demo_create_core
             console
             stop
-    ;;
+            ;;
 
         test)
             assume_configset
